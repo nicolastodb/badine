@@ -17,11 +17,13 @@
   --bg:#FFFFFF;--panel:#F5F5F7;--mid:#E8E8ED;--border:#D2D2D7;
   --text:#1D1D1F;--muted:#86868B;--accent:#0071E3;--danger:#FF3B30;
   --pause-bg:rgba(255,255,255,0.97);
+  --c-top:#52C2C8;--c-bot:#297A80;
 }
 .dark{
   --bg:#1C1C1E;--panel:#2C2C2E;--mid:#3A3A3C;--border:#48484A;
   --text:#F2F2F7;--muted:#8E8E93;--accent:#0A84FF;--danger:#FF453A;
   --pause-bg:rgba(28,28,30,0.96);
+  --c-top:#2C6A72;--c-bot:#14353A;
 }
 html,body{height:100%;background:var(--bg);overflow:hidden;-webkit-touch-callout:none;transition:background .3s}
 .app{
@@ -32,10 +34,30 @@ html,body{height:100%;background:var(--bg);overflow:hidden;-webkit-touch-callout
 }
 /* Net */
 .net-line{
-  position:absolute;z-index:10;pointer-events:none;background:var(--border);
+  position:absolute;z-index:10;pointer-events:none;background:var(--border);opacity:0;
 }
 .net-vert{left:50%;top:0;bottom:0;width:1px;transform:translateX(-50%)}
 .net-horiz{top:50%;left:0;right:0;height:1px;transform:translateY(-50%)}
+
+/* Perspective Court */
+.perspective-wrap{
+  position:absolute;inset:0;z-index:1;display:flex;align-items:center;justify-content:center;
+  pointer-events:none;overflow:hidden;
+}
+.court-svg{
+  width:95vw;max-width:860px;height:auto;
+  transform:perspective(800px) rotateX(46deg);
+  transition:transform .4s ease;filter:drop-shadow(0 15px 25px rgba(0,0,0,.15));
+}
+.dark .court-svg{filter:drop-shadow(0 15px 30px rgba(0,0,0,.4));}
+.court.horiz .court-svg{
+  width:auto;height:95vw;max-height:760px;
+  transform:perspective(800px) rotateX(46deg) rotateZ(-90deg);
+}
+@media(min-width:768px){
+  .court.horiz .court-svg{height:70vh;}
+}
+.service-zone{transition:all .3s ease;}
 /* Header */
 .header{
   display:flex;align-items:center;justify-content:center;position:relative;z-index:20;
@@ -676,6 +698,43 @@ ist-empty{color:var(--muted);font-size:14px;margin-top:40px}
 
 <div class="court" id="court">
   <div class="live-graph" id="live-graph"></div>
+  
+  <div class="perspective-wrap">
+    <svg viewBox="0 0 1340 610" class="court-svg" preserveAspectRatio="xMidYMid meet">
+       <defs>
+         <linearGradient id="court-grad" x1="0" y1="0" x2="0" y2="1">
+           <stop offset="0%" stop-color="var(--c-top)"/>
+           <stop offset="100%" stop-color="var(--c-bot)"/>
+         </linearGradient>
+       </defs>
+       <!-- Background fill -->
+       <rect width="1340" height="610" fill="url(#court-grad)"/>
+       
+       <!-- Dynamic service zones (placed under the grid lines) -->
+       <rect id="sz-server" class="service-zone" x="0" y="0" width="0" height="0" fill="transparent"/>
+       <rect id="sz-receiver" class="service-zone" x="0" y="0" width="0" height="0" fill="transparent"/>
+       
+       <!-- White lines -->
+       <g stroke="rgba(255,255,255,0.75)" stroke-width="7" fill="none">
+         <rect x="0" y="0" width="1340" height="610" stroke-width="12"/>
+         <!-- Singles sidelines -->
+         <line x1="0" y1="46" x2="1340" y2="46"/>
+         <line x1="0" y1="564" x2="1340" y2="564"/>
+         <!-- Short service lines -->
+         <line x1="472" y1="0" x2="472" y2="610"/>
+         <line x1="868" y1="0" x2="868" y2="610"/>
+         <!-- Doubles long service lines -->
+         <line x1="76" y1="0" x2="76" y2="610"/>
+         <line x1="1264" y1="0" x2="1264" y2="610"/>
+         <!-- Center lines -->
+         <line x1="0" y1="305" x2="472" y2="305"/>
+         <line x1="868" y1="305" x2="1340" y2="305"/>
+         <!-- Net -->
+         <line x1="670" y1="0" x2="670" y2="610" stroke-width="14" stroke="rgba(255,255,255,0.95)"/>
+       </g>
+    </svg>
+  </div>
+
   <div class="panel" id="panel-0">
     <div class="player-name" id="name-0">Joueur 1</div>
     <div class="player-level" id="level-0"></div>
@@ -1523,6 +1582,53 @@ function updateServeIndicators(){
   }
 }
 
+/* ════════ SERVICE ZONES ════════ */
+function updateServiceZones() {
+  const sRect = document.getElementById('sz-server');
+  const rRect = document.getElementById('sz-receiver');
+  if (!sRect || !rRect) return;
+
+  if (G.over) {
+    sRect.style.opacity = '0';
+    rRect.style.opacity = '0';
+    return;
+  }
+  
+  const p = G.srv;
+  const score = G.sc[p];
+  const isEven = score % 2 === 0;
+  
+  const physicalServer = sideSwapped ? 1 - p : p;
+  const color = playerColors[p];
+  
+  // Is the server in the Top half of the SVG (visuellement la gauche du joueur s'il est à gauche)
+  const isTop = (physicalServer === 0 && !isEven) || (physicalServer === 1 && isEven);
+  const yServer = isTop ? (doubleMode ? 0 : 46) : 305;
+  const yHeight = isTop ? (doubleMode ? 305 : 259) : (doubleMode ? 305 : 259);
+  
+  // Left side is 0, Right side is 1
+  const xServer = physicalServer === 0 ? (doubleMode ? 76 : 0) : 868;
+  const xWidth = physicalServer === 0 ? (doubleMode ? 396 : 472) : (doubleMode ? 396 : 472);
+  
+  // Receiver is diametrically opposite
+  const yReceiver = isTop ? 305 : (doubleMode ? 0 : 46);
+  const xReceiver = physicalServer === 0 ? 868 : (doubleMode ? 76 : 0);
+  
+  sRect.setAttribute('x', xServer);
+  sRect.setAttribute('y', yServer);
+  sRect.setAttribute('width', xWidth);
+  sRect.setAttribute('height', yHeight);
+  sRect.style.fill = color;
+  sRect.style.opacity = '0.35';
+  
+  rRect.setAttribute('x', xReceiver);
+  rRect.setAttribute('y', yReceiver);
+  rRect.setAttribute('width', xWidth);
+  rRect.setAttribute('height', yHeight);
+  rRect.style.fill = color;
+  rRect.style.opacity = '0.15';
+}
+
 /* ════════ RENDER ════════ */
 function render(){
   updateColors();
@@ -1637,6 +1743,7 @@ function render(){
   renderLiveGraph();
   renderLiveInfo();
   updateGpBadge();
+  updateServiceZones();
   updateLevelDisplay();
 }
 
