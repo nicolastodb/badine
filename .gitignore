@@ -1,0 +1,8 @@
+# Local state files
+cmd.json
+game_state.json
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db

@@ -1,0 +1,45 @@
+{
+  "name": "Badine",
+  "short_name": "Badine",
+  "description": "Arbitrage de badminton",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#F0F2EE",
+  "theme_color": "#F0F2EE",
+  "orientation": "any",
+  "categories": ["sports", "utilities"],
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Nouveau match",
+      "short_name": "Nouveau",
+      "url": "./?new=1",
+      "icons": [{"src": "icon-192.png", "sizes": "192x192", "type": "image/png"}]
+    },
+    {
+      "name": "Spectateurs",
+      "short_name": "Viewer",
+      "url": "./viewer.html",
+      "icons": [{"src": "icon-192.png", "sizes": "192x192", "type": "image/png"}]
+    }
+  ]
+}

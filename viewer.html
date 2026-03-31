@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0A0E0F">
+<meta name="theme-color" media="(prefers-color-scheme: light)" content="#F0F2EE">
+<title>Badine — En direct</title>
+<link rel="icon" type="image/png" href="logobadine.jpg">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet">
+<style>
+@media(prefers-color-scheme:dark){:root{--bg:#0A0E0F;--text:#E8F0F2;--muted:#4A6068;--panel:#111618;--border:#2A3438;--c0:#C8FF00;--c1:#FF6B35}}
+@media(prefers-color-scheme:light){:root{--bg:#F0F2EE;--text:#0D1A10;--muted:#3D6040;--panel:#E4E7E2;--border:#B0BAB0;--c0:#1A7A00;--c1:#C04A10}}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--bg);color:var(--text);overflow:hidden;transition:background .3s}
+.app{
+  font-family:'Barlow Condensed',sans-serif;height:100dvh;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:clamp(8px,2.5vmin,24px);padding:20px;
+}
+.header-row{display:flex;align-items:center;gap:12px}
+.logo{width:36px;height:36px;object-fit:cover;border-radius:10px;opacity:.7}
+.match-label{font-size:clamp(11px,1.8vmin,16px);font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--muted)}
+.scoreboard{display:flex;align-items:stretch;gap:clamp(12px,4vmin,40px)}
+.player-col{display:flex;flex-direction:column;align-items:center;gap:clamp(4px,1vmin,10px);flex:1}
+.p-name{font-size:clamp(14px,2.8vmin,26px);font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted)}
+.p-score{font-family:'Bebas Neue',sans-serif;font-size:clamp(80px,22vmin,200px);line-height:.9;letter-spacing:-2px;color:var(--text)}
+.p-score.c0{color:var(--c0)}
+.p-score.c1{color:var(--c1)}
+.p-sets{font-size:clamp(10px,1.8vmin,15px);font-weight:600;color:var(--muted);letter-spacing:2px}
+.p-srv{font-size:clamp(9px,1.4vmin,13px);font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--c0);min-height:14px}
+.divider{width:2px;background:var(--border);border-radius:2px;align-self:stretch;margin:10px 0}
+.status-row{display:flex;align-items:center;gap:8px}
+.live-dot{width:7px;height:7px;border-radius:50%;background:#FF3B30;animation:blink 1.4s ease-in-out infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.status-txt{font-size:clamp(10px,1.6vmin,14px);font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--muted)}
+.chrono{font-family:'Bebas Neue',sans-serif;font-size:clamp(20px,4vmin,36px);letter-spacing:3px;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header-row">
+    <img src="logobadine.jpg" alt="Badine" class="logo">
+    <div class="match-label" id="v-label">En attente…</div>
+  </div>
+  <div class="scoreboard">
+    <div class="player-col">
+      <div class="p-name" id="v-name-0">—</div>
+      <div class="p-score c0" id="v-score-0">0</div>
+      <div class="p-srv" id="v-srv-0"></div>
+      <div class="p-sets" id="v-sets-0"></div>
+    </div>
+    <div class="divider"></div>
+    <div class="player-col">
+      <div class="p-name" id="v-name-1">—</div>
+      <div class="p-score c1" id="v-score-1">0</div>
+      <div class="p-srv" id="v-srv-1"></div>
+      <div class="p-sets" id="v-sets-1"></div>
+    </div>
+  </div>
+  <div class="status-row">
+    <div class="live-dot" id="v-dot"></div>
+    <div class="chrono" id="v-chrono">0:00</div>
+    <div class="status-txt" id="v-status">En direct</div>
+  </div>
+</div>
+<script>
+let lastData=null, localSec=0, chronoTick=null, isRunning=false;
+
+function fmtTime(s){const h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sec=s%60;return h?h+":"+String(m).padStart(2,"0")+":"+String(sec).padStart(2,"0"):m+":"+String(sec).padStart(2,"0");}
+
+function update(d){
+  if(!d||!d.names) return;
+  const {names,G,matchSeconds} = d;
+  document.getElementById("v-name-0").textContent=names[0];
+  document.getElementById("v-name-1").textContent=names[1];
+  document.getElementById("v-score-0").textContent=G.sc[0];
+  document.getElementById("v-score-1").textContent=G.sc[1];
+  const fmt=([a,b])=>a+"-"+b;
+  document.getElementById("v-sets-0").textContent=G.sets.map(([a])=>a).join(" · ");
+  document.getElementById("v-sets-1").textContent=G.sets.map(([,b])=>b).join(" · ");
+  document.getElementById("v-srv-0").textContent=G.srv===0&&!G.over?"● Service":"";
+  document.getElementById("v-srv-1").textContent=G.srv===1&&!G.over?"● Service":"";
+  const setNum=G.sets.length+1;
+  document.getElementById("v-label").textContent=G.over
+    ? "Victoire "+names[G.winner]
+    : names[0]+" vs "+names[1]+" — Set "+setNum;
+  localSec=matchSeconds;
+  isRunning=!G.over;
+  if(G.over){
+    clearInterval(chronoTick);
+    document.getElementById("v-dot").style.background="#4A6068";
+    document.getElementById("v-status").textContent="Terminé";
+  } else {
+    document.getElementById("v-dot").style.background="#FF3B30";
+    document.getElementById("v-status").textContent="En direct";
+  }
+  document.getElementById("v-chrono").textContent=fmtTime(localSec);
+}
+
+// Local chrono ticks between polls
+clearInterval(chronoTick);
+chronoTick=setInterval(()=>{ if(isRunning){ localSec++; document.getElementById("v-chrono").textContent=fmtTime(localSec); } }, 1000);
+
+// BroadcastChannel — instant update when same browser (same origin)
+try{
+  const bc=new BroadcastChannel("badine");
+  bc.onmessage=e=>{ if(e.data){ const s=JSON.stringify(e.data); if(s!==lastData){lastData=s;update(e.data);} } };
+}catch(_){}
+
+// SSE first, fallback to polling (cross-device / different browser)
+function startSSE(){
+  const es=new EventSource("sse.php");
+  es.onmessage=e=>{ try{ const d=JSON.parse(e.data); const s=JSON.stringify(d); if(s!==lastData){lastData=s;update(d);} }catch(_){} };
+  es.onerror=()=>{ es.close(); startPolling(); };
+}
+function startPolling(){
+  setInterval(async()=>{
+    try{
+      const r=await fetch("state.php?t="+Date.now(),{cache:"no-store"});
+      if(!r.ok) return;
+      const d=await r.json();
+      const s=JSON.stringify(d);
+      if(s!==lastData){ lastData=s; update(d); }
+    }catch(_){}
+  },1500);
+}
+
+try{ startSSE(); }catch(_){ startPolling(); }
+</script>
+</body>
+</html>
