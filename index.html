@@ -661,6 +661,7 @@ ist-empty{color:var(--muted);font-size:14px;margin-top:40px}
 <div class="header">
   <div class="header-pill">
     <button class="icon-btn" id="btn-theme">◑</button>
+    <button class="icon-btn" id="btn-kiosk">◻</button>
     <div class="hdr-sep"></div>
     <div class="hdr-center">
       <div class="set-label" id="set-label">SET 1</div>
@@ -719,7 +720,6 @@ ist-empty{color:var(--muted);font-size:14px;margin-top:40px}
   <button class="iBtn" id="btn-share"><span class="ico">↗</span><span class="lbl">Partager</span></button>
   <div class="overflow-sep"></div>
   <button class="iBtn" id="btn-fullscreen"><span class="ico">⛶</span><span class="lbl">Plein écran</span></button>
-  <button class="iBtn" id="btn-kiosk"><span class="ico">◻</span><span class="lbl">Affichage</span></button>
   <div class="overflow-sep"></div>
   <button class="iBtn danger" id="btn-reset"><span class="ico">↺</span><span class="lbl">Nouveau match</span></button>
 </div>
@@ -2275,8 +2275,7 @@ addTap('btn-kiosk',()=>{
   kioskOn=!kioskOn;
   document.getElementById('app').classList.toggle('kiosk',kioskOn);
   const btn=document.getElementById('btn-kiosk');if(!btn)return;
-  btn.querySelector('.ico').textContent=kioskOn?'◼':'◻';
-  btn.querySelector('.lbl').textContent=kioskOn?'Affichage':'Affichage';
+  btn.textContent=kioskOn?'◼':'◻';
 });
 
 // ── Menu ⋯ Plus ──────────────────────────────────────────────────────────────
