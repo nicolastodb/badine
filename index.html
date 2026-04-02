@@ -45,42 +45,38 @@ html,body{height:100%;background:var(--bg);overflow:hidden;-webkit-touch-callout
   pointer-events:none;overflow:hidden;
 }
 @media(orientation:portrait){
-  /* Total layout separation to prevent any overlap */
+  /* Increased vertical separation: Service Info (225px) > Timeouts (190px) > Sets (155px) */
   .perspective-wrap{padding-top:4vh;padding-bottom:120px}
   
-  /* Serve Indicator (High) */
   .serve-indicator{
-    position:fixed;bottom:max(215px, 26vh);left:50%;transform:translateX(-50%);
+    position:fixed;bottom:max(225px, 27vh);left:50%;transform:translateX(-50%);
     z-index:200;pointer-events:none;white-space:nowrap;
-    font-size:13px;font-weight:700;color:var(--text);letter-spacing:0.03em;
-    display:flex;align-items:center;justify-content:center;
+    font-size:14px;font-weight:800;color:var(--text);letter-spacing:0.04em;text-transform:uppercase;
   }
   
-  /* Dots Shared Base */
   .set-dots, .timeout-dots{
     position:fixed;z-index:200;pointer-events:none;
-    display:flex;gap:5px;align-items:center;
+    display:flex;gap:6px;align-items:center;
   }
   
-  /* Player-side alignment (P0 Left, P1 Right) */
-  #setdots-0, #tdots-0{left:10%;right:unset}
-  #setdots-1, #tdots-1{right:10%;left:unset;flex-direction:row-reverse}
+  /* P0 Left, P1 Right - ensured no horizontal clashing */
+  #setdots-0, #tdots-0{left:8%;right:unset}
+  #setdots-1, #tdots-1{right:8%;left:unset;flex-direction:row-reverse}
   
-  /* Vertical layering */
-  .timeout-dots{bottom:max(178px, 21vh)}
-  .set-dots{bottom:max(145px, 17vh)}
+  .timeout-dots{bottom:max(190px, 22vh)}
+  .set-dots{bottom:max(155px, 18vh)}
   
-  /* Visual diff: Timeouts = smaller squares, muted */
+  /* Visual: Timeouts = Gold Squares */
   .timeout-dots .timeout-dot{
-    width:7px;height:7px;border-radius:1px !important;
-    background:var(--border);opacity:0.4;
+    width:8px;height:8px;border-radius:1px !important;
+    background:var(--border);opacity:0.3;
   }
-  .timeout-dots .timeout-dot.used{opacity:0.1;background:var(--border)}
+  .timeout-dots .timeout-dot.active{background:#FFD700;opacity:1;box-shadow:0 0 4px #FFD70088}
   
-  /* Sets = larger circles, player color */
-  .set-dots .sd{width:12px;height:12px;border-radius:50%;background:var(--border)}
+  /* Visual: Sets = Large Circles */
+  .set-dots .sd{width:15px;height:15px;border-radius:50%;background:var(--border)}
   
-  .live-info{display:none !important} /* Hide redundant info in portrait */
+  .live-info{display:none !important}
 }
 @media(orientation:landscape){
   .perspective-wrap{align-items:center;padding-bottom:0}
@@ -892,7 +888,7 @@ body:has(.open) .live-info {
   <div class="overflow-sep"></div>
   <button class="iBtn danger" id="btn-reset"><span class="ico">↺</span><span class="lbl">Nouveau match</span></button>
   <div class="overflow-sep"></div>
-  <div style="font-size:9px;color:var(--muted);text-align:center;padding:8px 0 4px;letter-spacing:.05em;text-transform:uppercase;opacity:0.6">Badine v11.0</div>
+  <div style="font-size:9px;color:var(--muted);text-align:center;padding:8px 0 4px;letter-spacing:.05em;text-transform:uppercase;opacity:0.6">Badine v11.1</div>
 </div>
 
 <!-- Settings -->
@@ -1845,7 +1841,7 @@ function render(){
     const td=document.getElementById(`tdots-${side}`);
     if(td){
       td.innerHTML='';
-      for(let i=0;i<2;i++){const dot=document.createElement('div');dot.className='timeout-dot'+(timeoutsLeft[pl]<=i?' used':'');td.appendChild(dot);}
+      for(let i=0;i<2;i++){const dot=document.createElement('div');dot.className='timeout-dot'+(i<timeoutsLeft[pl]?' active':'');td.appendChild(dot);}
     }
     // Band
     const band=document.getElementById(`band-${side}`);
