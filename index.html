@@ -41,15 +41,27 @@ html,body{height:100%;background:var(--bg);overflow:hidden;-webkit-touch-callout
 
 /* Perspective Court */
 .perspective-wrap{
-  position:absolute;inset:0;z-index:0;display:flex;align-items:flex-end;justify-content:center;
-  padding-bottom:clamp(100px,18vh,180px);pointer-events:none;overflow:hidden;
+  position:absolute;inset:0;z-index:0;display:flex;align-items:center;justify-content:center;
+  pointer-events:none;overflow:hidden;
+}
+@media(orientation:portrait){
+  .live-info, .set-dots, .serve-indicator, .timeout-dots{
+    position:fixed;bottom:max(85px, env(safe-area-inset-bottom, 85px));
+    z-index:200;pointer-events:none;
+  }
+  .live-info{left:50%;transform:translateX(-50%);bottom:max(130px, 15vh)}
+  .set-dots{left:20px}
+  .timeout-dots{right:20px}
+  #setdots-1{left:unset;right:20px}
+  #tdots-1{right:unset;left:20px}
+  .serve-indicator{left:50%;transform:translateX(-50%);bottom:max(110px, 12vh);font-size:10px}
 }
 @media(orientation:landscape){
   .perspective-wrap{align-items:center;padding-bottom:0}
 }
 .court-svg{
   width:85vw;max-width:800px;height:auto;
-  transform:perspective(1200px) rotateX(65deg);
+  transform:perspective(1200px) rotateX(42deg);
   transition:transform .4s ease;filter:drop-shadow(0 15px 25px rgba(0,0,0,.15));
 }
 .dark .court-svg{filter:drop-shadow(0 15px 30px rgba(0,0,0,.4));}
@@ -106,9 +118,12 @@ html,body{height:100%;background:var(--bg);overflow:hidden;-webkit-touch-callout
 .court.horiz{flex-direction:column}
 .panel{
   flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;
-  padding-top:clamp(20px,4vh,50px);gap:clamp(4px,1vh,10px);
+  padding:max(15px,2vh) 0 max(15px,2vh);gap:clamp(4px,1vh,10px);
   position:relative;z-index:10;cursor:pointer;transition:background .08s;
   -webkit-tap-highlight-color:transparent;
+}
+@media(orientation:portrait){
+  .set-dots{margin-top:auto}
 }
 .panel.flash{background:rgba(128,128,128,0.07)}
 /* Side bands */
@@ -126,8 +141,8 @@ html,body{height:100%;background:var(--bg);overflow:hidden;-webkit-touch-callout
 /* Player name */
 .player-name{
   font-size:clamp(13px,2vmin,20px);font-weight:600;letter-spacing:.02em;text-transform:uppercase;
-  color:var(--player-color,var(--muted));transition:color .3s;
-  pointer-events:none;
+  color:var(--player-color,var(--muted));transition:all .5s cubic-bezier(.4,0,.2,1);
+  pointer-events:none;z-index:110;order:2;
 }
 .name-input{
   font-family:system-ui,-apple-system,sans-serif;font-size:clamp(13px,2vmin,20px);font-weight:600;
@@ -141,7 +156,7 @@ html,body{height:100%;background:var(--bg);overflow:hidden;-webkit-touch-callout
   font-family:system-ui,-apple-system,sans-serif;font-weight:900;
   font-size:min(26vw,30dvh);letter-spacing:-.04em;
   line-height:.88;color:var(--text);pointer-events:none;
-  position:relative;z-index:100;order:-1;
+  position:relative;z-index:100;order:1;
   transition:color .3s,transform .15s;
 }
 /* Deuce: score rouge pulsant */
@@ -470,8 +485,23 @@ ist-empty{color:var(--muted);font-size:14px;margin-top:40px}
   .court:not(.horiz){flex-direction:row}
   .panel{justify-content:center;padding-top:0}
   .score{font-size:min(32vw,50dvh)!important;order:0}
-  .live-graph{top:0;height:50px}
-  .player-name{font-size:clamp(14px,2.5vmin,22px)}
+  .player-name{
+    position:absolute;font-size:min(12px,1.8vw);font-weight:800;
+    color:#fff !important;text-shadow:0 0 10px rgba(0,0,0,0.8);
+    background:rgba(0,0,0,0.55);backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,0.2);
+    padding:6px 12px;border-radius:8px;box-shadow:0 4px 15px rgba(0,0,0,0.3);z-index:150;
+  }
+  .live-info, .set-dots, .serve-indicator, .timeout-dots{
+    position:fixed;bottom:max(70px, env(safe-area-inset-bottom, 70px));
+    z-index:200;pointer-events:none;
+  }
+  .live-info{left:50%;transform:translateX(-50%);bottom:max(105px, 11vh)}
+  .set-dots{left:20px}
+  .timeout-dots{right:20px}
+  #setdots-1{left:unset;right:20px}
+  #tdots-1{right:unset;left:20px}
+  .serve-indicator{left:50%;transform:translateX(-50%);bottom:max(88px, 9vh);font-size:10px}
+  .live-graph{top:0;height:40px}
   .bottom-bar{padding:6px max(env(safe-area-inset-right,12px),12px) max(8px,env(safe-area-inset-bottom,8px))}
 }
 /* Tablet portrait/landscape */
@@ -743,21 +773,21 @@ ist-empty{color:var(--muted);font-size:14px;margin-top:40px}
   </div>
 
   <div class="panel" id="panel-0">
+    <div class="score" id="score-0">0</div>
     <div class="player-name" id="name-0">Joueur 1</div>
     <div class="player-level" id="level-0"></div>
     <input class="name-input" id="input-0" maxlength="12" style="display:none">
     <div class="live-info" id="live-info-0"></div>
-    <div class="score" id="score-0">0</div>
     <div class="set-dots" id="setdots-0"></div>
     <div class="serve-indicator" id="serve-ind-0"></div>
     <div class="timeout-dots" id="tdots-0"></div>
   </div>
   <div class="panel" id="panel-1">
+    <div class="score" id="score-1">0</div>
     <div class="player-name" id="name-1">Joueur 2</div>
     <div class="player-level" id="level-1"></div>
     <input class="name-input" id="input-1" maxlength="12" style="display:none">
     <div class="live-info" id="live-info-1"></div>
-    <div class="score" id="score-1">0</div>
     <div class="set-dots" id="setdots-1"></div>
     <div class="serve-indicator" id="serve-ind-1"></div>
     <div class="timeout-dots" id="tdots-1"></div>
@@ -1634,6 +1664,35 @@ function updateServiceZones() {
   rRect.setAttribute('height', yHeight);
   rRect.style.fill = color;
   rRect.style.opacity = '0.15';
+
+  // Position player names over service zones (landscape only)
+  if (window.innerHeight < 900 && window.innerWidth > window.innerHeight) {
+    const sBox = sRect.getBoundingClientRect();
+    const rBox = rRect.getBoundingClientRect();
+    const nameS = document.getElementById(`name-${physicalServer}`);
+    const nameR = document.getElementById(`name-${1 - physicalServer}`);
+    
+    if (nameS && sBox.width > 0) {
+      nameS.style.left = (sBox.left + sBox.width / 2) + 'px';
+      nameS.style.top = (sBox.top + sBox.height / 2) + 'px';
+      nameS.style.transform = 'translate(-50%, -50%)';
+    }
+    if (nameR && rBox.width > 0) {
+      nameR.style.left = (rBox.left + rBox.width / 2) + 'px';
+      nameR.style.top = (rBox.top + rBox.height / 2) + 'px';
+      nameR.style.transform = 'translate(-50%, -50%)';
+    }
+  } else {
+    // Reset positions for portrait
+    for (let i = 0; i < 2; i++) {
+      const el = document.getElementById(`name-${i}`);
+      if (el) {
+        el.style.left = '';
+        el.style.top = '';
+        el.style.transform = '';
+      }
+    }
+  }
 }
 
 /* ════════ RENDER ════════ */
