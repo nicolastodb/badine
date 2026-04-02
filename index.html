@@ -865,6 +865,8 @@ body:has(.open) .live-info {
   <button class="iBtn" id="btn-fullscreen"><span class="ico">⛶</span><span class="lbl">Plein écran</span></button>
   <div class="overflow-sep"></div>
   <button class="iBtn danger" id="btn-reset"><span class="ico">↺</span><span class="lbl">Nouveau match</span></button>
+  <div class="overflow-sep"></div>
+  <div style="font-size:9px;color:var(--muted);text-align:center;padding:8px 0 4px;letter-spacing:.05em;text-transform:uppercase;opacity:0.6">Badine v11.0</div>
 </div>
 
 <!-- Settings -->
@@ -3188,7 +3190,19 @@ requestWakeLock();
 requestNotifPermission();
 setTimeout(openSplash,100);
 startWatchPolling();
-if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('sw.js').then(reg=>{
+    reg.onupdatefound=()=>{
+      const nw=reg.installing;
+      nw.onstatechange=()=>{
+        if(nw.state==='installed'&&navigator.serviceWorker.controller){
+          console.log('Maj v11 détectée. Rafraîchissement...');
+          location.reload();
+        }
+      };
+    };
+  }).catch(()=>{});
+}
 </script>
 </body>
 </html>
