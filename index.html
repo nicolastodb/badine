@@ -238,10 +238,10 @@ html,body{height:100%;background:var(--bg);overflow:hidden;-webkit-touch-callout
   transition:background .15s,color .15s;min-width:48px;
 }
 @media(orientation:portrait){
-  .pill{padding:6px 8px;gap:2px}
-  .iBtn{padding:6px 2px;min-width:0;flex:1}
-  .iBtn .lbl{font-size:8.5px;letter-spacing:0}
-  .pill-sep{margin:0 1px}
+  .pill{padding:6px 6px;gap:1px}
+  .iBtn{padding:6px 0;min-width:0;flex:1}
+  .iBtn .lbl{font-size:8px;letter-spacing:-0.01em}
+  .pill-sep{margin:0 1px;opacity:0.3}
 }
 .iBtn:active{background:var(--mid)}
 .iBtn:disabled{opacity:.25;pointer-events:none}
@@ -862,6 +862,8 @@ body:has(.open) .live-info {
     <div class="pill-sep"></div>
     <button class="iBtn" id="btn-let"><span class="ico">↻</span><span class="lbl">Let</span></button>
     <div class="pill-sep"></div>
+    <button class="iBtn" id="btn-switch-sides"><span class="ico">⇄</span><span class="lbl">Côtés</span></button>
+    <div class="pill-sep"></div>
     <button class="iBtn" id="btn-timeout"><span class="ico">⏱</span><span class="lbl">T.O.</span></button>
     <div class="pill-sep"></div>
     <button class="iBtn danger" id="btn-reset"><span class="ico">⚐</span><span class="lbl">Match</span></button>
@@ -872,14 +874,13 @@ body:has(.open) .live-info {
 
 <!-- Overflow menu -->
 <div class="overflow-menu" id="overflow-menu">
-  <button class="iBtn" id="btn-switch-sides"><span class="ico">⇄</span><span class="lbl">Côtés</span></button>
   <button class="iBtn" id="btn-history"><span class="ico">📈</span><span class="lbl">Stats</span></button>
   <button class="iBtn" id="btn-voice-toggle"><span class="ico">◎</span><span class="lbl">Muet</span></button>
   <button class="iBtn" id="btn-share"><span class="ico">↗</span><span class="lbl">Partager</span></button>
   <div class="overflow-sep"></div>
   <button class="iBtn" id="btn-fullscreen"><span class="ico">⛶</span><span class="lbl">Plein écran</span></button>
   <div class="overflow-sep"></div>
-  <div style="font-size:9px;color:var(--muted);text-align:center;padding:8px 0 4px;letter-spacing:.05em;text-transform:uppercase;opacity:0.6">Badine v11.2</div>
+  <div style="font-size:9px;color:var(--muted);text-align:center;padding:8px 0 4px;letter-spacing:.05em;text-transform:uppercase;opacity:0.6">Badine v11.3</div>
 </div>
 
 <!-- Settings -->
@@ -3209,7 +3210,7 @@ if('serviceWorker' in navigator){
       const nw=reg.installing;
       nw.onstatechange=()=>{
         if(nw.state==='installed'&&navigator.serviceWorker.controller){
-          console.log('Maj v11 détectée. Rafraîchissement...');
+          console.log('Maj v18 détectée. Rafraîchissement...');
           location.reload();
         }
       };
