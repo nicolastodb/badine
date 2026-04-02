@@ -45,18 +45,42 @@ html,body{height:100%;background:var(--bg);overflow:hidden;-webkit-touch-callout
   pointer-events:none;overflow:hidden;
 }
 @media(orientation:portrait){
+  /* Total layout separation to prevent any overlap */
   .perspective-wrap{padding-top:4vh;padding-bottom:120px}
-  .live-info, .set-dots, .serve-indicator, .timeout-dots{
-    position:fixed;bottom:max(150px, 18vh);
-    z-index:200;pointer-events:none;
+  
+  /* Serve Indicator (High) */
+  .serve-indicator{
+    position:fixed;bottom:max(215px, 26vh);left:50%;transform:translateX(-50%);
+    z-index:200;pointer-events:none;white-space:nowrap;
+    font-size:13px;font-weight:700;color:var(--text);letter-spacing:0.03em;
     display:flex;align-items:center;justify-content:center;
   }
-  .live-info{left:50%;transform:translateX(-50%);bottom:max(210px, 25vh)}
-  .set-dots{left:12%}
-  .timeout-dots{right:12%}
-  #setdots-1{left:unset;right:12%}
-  #tdots-1{right:unset;left:12%}
-  .serve-indicator{left:50%;transform:translateX(-50%);bottom:max(175px, 21vh);font-size:12px;font-weight:700;color:var(--text)}
+  
+  /* Dots Shared Base */
+  .set-dots, .timeout-dots{
+    position:fixed;z-index:200;pointer-events:none;
+    display:flex;gap:5px;align-items:center;
+  }
+  
+  /* Player-side alignment (P0 Left, P1 Right) */
+  #setdots-0, #tdots-0{left:10%;right:unset}
+  #setdots-1, #tdots-1{right:10%;left:unset;flex-direction:row-reverse}
+  
+  /* Vertical layering */
+  .timeout-dots{bottom:max(178px, 21vh)}
+  .set-dots{bottom:max(145px, 17vh)}
+  
+  /* Visual diff: Timeouts = smaller squares, muted */
+  .timeout-dots .timeout-dot{
+    width:7px;height:7px;border-radius:1px !important;
+    background:var(--border);opacity:0.4;
+  }
+  .timeout-dots .timeout-dot.used{opacity:0.1;background:var(--border)}
+  
+  /* Sets = larger circles, player color */
+  .set-dots .sd{width:12px;height:12px;border-radius:50%;background:var(--border)}
+  
+  .live-info{display:none !important} /* Hide redundant info in portrait */
 }
 @media(orientation:landscape){
   .perspective-wrap{align-items:center;padding-bottom:0}

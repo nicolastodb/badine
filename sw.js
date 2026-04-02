@@ -1,4 +1,4 @@
-const CACHE = 'badine-v13';
+const CACHE = 'badine-v14';
 const ASSETS = [
   './',
   './index.html',
