@@ -237,6 +237,12 @@ html,body{height:100%;background:var(--bg);overflow:hidden;-webkit-touch-callout
   padding:10px 10px;border-radius:999px;color:var(--muted);
   transition:background .15s,color .15s;min-width:48px;
 }
+@media(orientation:portrait){
+  .pill{padding:6px 8px;gap:2px}
+  .iBtn{padding:6px 2px;min-width:0;flex:1}
+  .iBtn .lbl{font-size:8.5px;letter-spacing:0}
+  .pill-sep{margin:0 1px}
+}
 .iBtn:active{background:var(--mid)}
 .iBtn:disabled{opacity:.25;pointer-events:none}
 .iBtn .ico{font-size:20px;line-height:1;display:flex;align-items:center;justify-content:center}
@@ -852,39 +858,28 @@ body:has(.open) .live-info {
 
 <div class="bottom-bar">
   <div class="pill">
-    <button class="iBtn" id="btn-undo" disabled>
-      <span class="ico"><svg viewBox="0 0 24 24"><path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5v0a5.5 5.5 0 0 1-5.5 5.5H11"/></svg></span>
-      <span class="lbl">Annuler</span>
-    </button>
+    <button class="iBtn" id="btn-undo" disabled><span class="ico">↺</span><span class="lbl">Annuler</span></button>
     <div class="pill-sep"></div>
-    <button class="iBtn" id="btn-switch-sides">
-      <span class="ico"><svg viewBox="0 0 24 24"><path d="m18 8 4 4-4 4"/><path d="M2 12h20"/><path d="m6 8-4 4 4 4"/></svg></span>
-      <span class="lbl">Côtés</span>
-    </button>
+    <button class="iBtn" id="btn-let"><span class="ico">↻</span><span class="lbl">Let</span></button>
     <div class="pill-sep"></div>
-    <button class="iBtn danger" id="btn-reset">
-      <span class="ico"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg></span>
-      <span class="lbl">Nouveau match</span>
-    </button>
+    <button class="iBtn" id="btn-timeout"><span class="ico">⏱</span><span class="lbl">T.O.</span></button>
     <div class="pill-sep"></div>
-    <button class="iBtn" id="btn-more">
-      <span class="ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg></span>
-      <span class="lbl">Plus</span>
-    </button>
+    <button class="iBtn danger" id="btn-reset"><span class="ico">⚐</span><span class="lbl">Match</span></button>
+    <div class="pill-sep"></div>
+    <button class="iBtn" id="btn-more"><span class="ico">⋯</span><span class="lbl">Plus</span></button>
   </div>
 </div>
 
 <!-- Overflow menu -->
 <div class="overflow-menu" id="overflow-menu">
-  <button class="iBtn" id="btn-voice-toggle"><span class="ico">◎</span><span class="lbl">Voix</span></button>
+  <button class="iBtn" id="btn-switch-sides"><span class="ico">⇄</span><span class="lbl">Côtés</span></button>
   <button class="iBtn" id="btn-history"><span class="ico">📈</span><span class="lbl">Stats</span></button>
+  <button class="iBtn" id="btn-voice-toggle"><span class="ico">◎</span><span class="lbl">Muet</span></button>
   <button class="iBtn" id="btn-share"><span class="ico">↗</span><span class="lbl">Partager</span></button>
   <div class="overflow-sep"></div>
-  <button class="iBtn" id="btn-let"><span class="ico">↺</span><span class="lbl">Let</span></button>
-  <button class="iBtn" id="btn-timeout"><span class="ico">⏱</span><span class="lbl">T.O.</span></button>
   <button class="iBtn" id="btn-fullscreen"><span class="ico">⛶</span><span class="lbl">Plein écran</span></button>
   <div class="overflow-sep"></div>
-  <div style="font-size:9px;color:var(--muted);text-align:center;padding:8px 0 4px;letter-spacing:.05em;text-transform:uppercase;opacity:0.6">Badine v11.1</div>
+  <div style="font-size:9px;color:var(--muted);text-align:center;padding:8px 0 4px;letter-spacing:.05em;text-transform:uppercase;opacity:0.6">Badine v11.2</div>
 </div>
 
 <!-- Settings -->
@@ -2373,7 +2368,7 @@ document.getElementById('settings-panel').addEventListener('pointerdown',e=>{
 document.getElementById('bo-group').addEventListener('pointerdown',e=>{
   const btn=e.target.closest('[data-bo]');if(!btn)return;
   bestOf=parseInt(btn.dataset.bo);document.querySelectorAll('[data-bo]').forEach(b=>b.classList.toggle('on',b===btn));
-  document.getElementById('settings-panel').classList.remove('open');resetMatch();
+  resetMatch(); // Keeps window open
 });
 document.getElementById('pts-group').addEventListener('pointerdown',e=>{
   const btn=e.target.closest('[data-pts]');if(!btn)return;
@@ -2395,7 +2390,7 @@ document.getElementById('net-group').addEventListener('pointerdown',e=>{
   render();saveState();
 });
 document.getElementById('btn-voice-test').addEventListener('pointerdown',()=>{unlockSpeech();if(voiceOn)speak(`Test. Service ${names[0]}.`);});
-document.getElementById('btn-qr').addEventListener('pointerdown',()=>{document.getElementById('settings-panel').classList.remove('open');document.getElementById('qr-panel').classList.add('open');renderQR(0);});
+document.getElementById('btn-qr').addEventListener('pointerdown',()=>{document.getElementById('qr-panel').classList.add('open');renderQR(0);});
 document.getElementById('qr-tabs').addEventListener('pointerdown',e=>{const btn=e.target.closest('[data-qi]');if(!btn)return;renderQR(parseInt(btn.dataset.qi));});
 
 // Close settings on outside tap
