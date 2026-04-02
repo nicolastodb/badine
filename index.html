@@ -45,16 +45,18 @@ html,body{height:100%;background:var(--bg);overflow:hidden;-webkit-touch-callout
   pointer-events:none;overflow:hidden;
 }
 @media(orientation:portrait){
+  .perspective-wrap{padding-top:4vh;padding-bottom:120px}
   .live-info, .set-dots, .serve-indicator, .timeout-dots{
-    position:fixed;bottom:max(85px, env(safe-area-inset-bottom, 85px));
+    position:fixed;bottom:max(150px, 18vh);
     z-index:200;pointer-events:none;
+    display:flex;align-items:center;justify-content:center;
   }
-  .live-info{left:50%;transform:translateX(-50%);bottom:max(130px, 15vh)}
-  .set-dots{left:20px}
-  .timeout-dots{right:20px}
-  #setdots-1{left:unset;right:20px}
-  #tdots-1{right:unset;left:20px}
-  .serve-indicator{left:50%;transform:translateX(-50%);bottom:max(110px, 12vh);font-size:10px}
+  .live-info{left:50%;transform:translateX(-50%);bottom:max(210px, 25vh)}
+  .set-dots{left:12%}
+  .timeout-dots{right:12%}
+  #setdots-1{left:unset;right:12%}
+  #tdots-1{right:unset;left:12%}
+  .serve-indicator{left:50%;transform:translateX(-50%);bottom:max(175px, 21vh);font-size:12px;font-weight:700;color:var(--text)}
 }
 @media(orientation:landscape){
   .perspective-wrap{align-items:center;padding-bottom:0}
