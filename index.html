@@ -541,8 +541,8 @@ ist-empty{color:var(--muted);font-size:14px;margin-top:40px}
   width:100%;max-width:440px;margin-top:4px;
 }
 .btn-start:active{transform:scale(0.98);opacity:.9}
-/* Landscape — tablette/TV (hauteur suffisante) */
-@media(orientation:landscape){
+/* Landscape — Tablettes / Écrans Large (Hauteur > 600px) */
+@media(orientation:landscape)and(min-height:601px){
   .court:not(.horiz){flex-direction:row}
   .court.horiz .court-svg{height:95vh;max-height:none;transform:perspective(800px) rotateX(46deg) rotateZ(-90deg) scale(1.05);}
   .panel{position:absolute;inset:0;width:50%;height:100%;justify-content:flex-start;padding-top:0}
@@ -594,8 +594,8 @@ body:has(.open) .live-info {
   .live-info{font-size:clamp(13px,2vmin,18px)}
 }
 
-/* 📱 Responsive landscape — small screens (phones) SCOREBOARD v4 (Sidebar) */
-@media(orientation:landscape)and(max-height:500px){
+/* 📱 Responsive landscape — SMARTPHONES SCOREBOARD v4 (Sidebar) */
+@media(orientation:landscape)and(max-height:600px){
   /* Nettoyage radical - Court, Header, Graph out */
   .perspective-wrap, .court-svg, .header, .side-band, .live-info, .player-level, .live-graph, .sets-bar{display:none !important}
   .app{padding-top:0 !important; overflow:hidden;}
