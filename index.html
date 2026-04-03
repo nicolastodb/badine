@@ -45,8 +45,8 @@ html,body{height:100%;background:var(--bg);overflow:hidden;-webkit-touch-callout
   pointer-events:none;overflow:hidden;
 }
 @media(orientation:portrait){
-  /* Increased vertical separation: Service Info (225px) > Timeouts (190px) > Sets (155px) */
-  .perspective-wrap{padding-top:4vh;padding-bottom:120px}
+  /* Le terrain est poussé sous les scores et les noms */
+  .perspective-wrap{padding-top:max(32vh, 220px);padding-bottom:120px;align-items:flex-start}
   
   .serve-indicator{
     position:fixed;bottom:max(225px, 27vh);left:50%;transform:translateX(-50%);
