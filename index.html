@@ -45,8 +45,14 @@ html,body{height:100%;background:var(--bg);overflow:hidden;-webkit-touch-callout
   pointer-events:none;overflow:hidden;
 }
 @media(orientation:portrait){
-  /* Le terrain est poussé sous les scores et les noms */
-  .perspective-wrap{padding-top:max(32vh, 220px);padding-bottom:120px;align-items:flex-start}
+  /* Terrain centré entre score en haut et noms/boutons en bas */
+  .perspective-wrap{padding-top:max(150px,18vh);padding-bottom:max(280px,32vh);align-items:center}
+  
+  .player-name, .name-input, .player-level {
+    position:absolute!important; left:50%; transform:translateX(-50%)!important; margin:0;
+  }
+  .player-name, .name-input { bottom:max(275px, 30vh); }
+  .player-level { bottom:max(255px, 28vh); }
   
   .serve-indicator{
     position:fixed;bottom:max(225px, 27vh);left:50%;transform:translateX(-50%);
