@@ -108,21 +108,21 @@ html,body{height:100%;background:var(--bg);overflow:hidden;-webkit-touch-callout
   padding:max(10px,env(safe-area-inset-top,10px)) 10px 4px;
 }
 .header-pill{
-  display:flex;align-items:center;gap:2px;background:var(--panel);
-  border:1px solid var(--border);border-radius:999px;padding:4px 6px;
+  display:flex;align-items:center;gap:6px;background:var(--panel);
+  border:1px solid var(--border);border-radius:999px;padding:6px 12px;
   box-shadow:0 1px 4px rgba(0,0,0,.08);
 }
-.hdr-sep{width:1px;height:22px;background:var(--border);margin:0 2px;flex-shrink:0}
+.hdr-sep{width:1.5px;height:28px;background:var(--border);margin:0 4px;flex-shrink:0}
 .icon-btn{
   background:none;border:none;border-radius:999px;color:var(--muted);
-  font-size:18px;font-family:system-ui,sans-serif;cursor:pointer;
-  padding:7px 13px;line-height:1;transition:background .15s;
+  font-size:24px;font-family:system-ui,sans-serif;cursor:pointer;
+  padding:10px 18px;line-height:1;transition:background .15s;
 }
 .icon-btn:active{background:var(--mid)}
-.hdr-center{display:flex;flex-direction:column;align-items:center;gap:1px;padding:0 4px}
-.set-label{font-size:9px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);line-height:1}
+.hdr-center{display:flex;flex-direction:column;align-items:center;gap:2px;padding:0 6px}
+.set-label{font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);line-height:1}
 .match-timer{
-  font-family:ui-monospace,'Menlo',monospace;font-weight:500;font-size:18px;
+  font-family:ui-monospace,'Menlo',monospace;font-weight:500;font-size:22px;
   letter-spacing:1px;color:var(--muted);line-height:1;transition:color .3s;
   cursor:pointer;-webkit-tap-highlight-color:transparent;
 }
@@ -796,7 +796,6 @@ body:has(.open) .live-info {
 <div class="header">
   <div class="header-pill">
     <button class="icon-btn" id="btn-theme">◑</button>
-    <button class="icon-btn" id="btn-kiosk">◻</button>
     <div class="hdr-sep"></div>
     <div class="hdr-center">
       <div class="set-label" id="set-label">SET 1</div>
@@ -2502,15 +2501,6 @@ addTap('btn-undo',()=>{
   }
   btn.dataset.confirm='1';btn.querySelector('.lbl').textContent='Confirmer';vibrate(30);
   undoTapTimer=setTimeout(()=>{btn.dataset.confirm='0';btn.querySelector('.lbl').textContent='Annuler';},2000);
-});
-
-// Kiosk mode
-let kioskOn=false;
-addTap('btn-kiosk',()=>{
-  kioskOn=!kioskOn;
-  document.getElementById('app').classList.toggle('kiosk',kioskOn);
-  const btn=document.getElementById('btn-kiosk');if(!btn)return;
-  btn.textContent=kioskOn?'◼':'◻';
 });
 
 // ── Menu ⋯ Plus ──────────────────────────────────────────────────────────────
