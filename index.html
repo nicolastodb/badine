@@ -591,13 +591,46 @@ body:has(.open) .live-info {
   .live-info{font-size:clamp(13px,2vmin,18px)}
 }
 
-/* 📱 Responsive landscape — small screens (phones) SCOREBOARD v3 */
+/* 📱 Responsive landscape — small screens (phones) SCOREBOARD v4 (Sidebar) */
 @media(orientation:landscape)and(max-height:500px){
-  /* Nettoyage radical - Court et Header out */
+  /* Nettoyage radical - Court, Header, Graph out */
   .perspective-wrap, .court-svg, .header, .side-band, .live-info, .player-level, .live-graph, .sets-bar{display:none !important}
   .app{padding-top:0 !important; overflow:hidden;}
   
-  .court{flex-direction:row !important; display:flex !important; height:100vh !important;}
+  /* Menu LATÉRAL Gauche */
+  .bottom-bar{
+    position:fixed !important; inset:0 auto 0 0 !important; 
+    width:68px !important; height:100% !important;
+    background:#0a4261 !important; /* Bleu Marine assorti au logo */
+    display:flex !important; flex-direction:column !important;
+    justify-content:center !important; align-items:center !important;
+    padding:10px 0 !important; z-index:400; transform:none !important;
+    border-right:1px solid rgba(255,255,255,0.1);
+  }
+  .pill{
+    background:transparent !important; border:none !important; box-shadow:none !important; 
+    flex-direction:column !important; gap:20px !important; pointer-events:auto;
+  }
+  /* Masquer boutons inutiles, garder: Undo, Let, T.O., Plus */
+  .iBtn:not(#btn-undo):not(#btn-let):not(#btn-timeout):not(#btn-more){ display:none !important }
+  
+  .iBtn{
+    background:rgba(255,255,255,0.15) !important; backdrop-filter:none !important; 
+    border:1px solid rgba(255,255,255,0.2) !important;
+    width:48px !important; height:48px !important; border-radius:12px !important;
+    display:flex !important; justify-content:center !important; align-items:center !important;
+    padding:0 !important; box-shadow:none !important; color:#fff !important;
+  }
+  .iBtn .ico{font-size:24px !important; margin:0 !important}
+  .iBtn .lbl, .pill-sep{display:none !important}
+  .iBtn:active{background:rgba(255,255,255,0.3) !important}
+
+  /* Zone principale décalée à droite de 68px */
+  .court{
+    flex-direction:row !important; display:flex !important; 
+    height:100vh !important; margin-left:68px !important;
+    width:calc(100% - 68px) !important;
+  }
   .panel{
      position:relative !important; width:50% !important; height:100% !important;
      display:flex !important; flex-direction:column !important;
@@ -605,72 +638,43 @@ body:has(.open) .live-info {
      padding:0 !important; margin:0 !important;
      background: transparent !important;
   }
-  #panel-0{background:rgba(0,0,0,0.05) !important; border-right:1px solid var(--border) !important}
-  .dark #panel-0{background:rgba(255,255,255,0.03) !important}
-  #panel-1{background:transparent !important}
+  #panel-0{background:rgba(0,0,0,0.04) !important; border-right:1px solid var(--border) !important}
+  .dark #panel-0{background:rgba(255,255,255,0.02) !important}
 
-  /* Scores monumentaux centrés */
+  /* Scores massifs et fixes */
   .score{
     position:relative !important; top:auto !important; left:auto !important; transform:none !important;
-    font-size:min(45vw, 82dvh) !important; font-weight:900 !important;
+    font-size:min(40vw, 85dvh) !important; font-weight:900 !important;
     opacity:1 !important; pointer-events:none; 
-    line-height:0.9 !important; margin:0 !important; text-align:center;
+    line-height:0.85 !important; margin:0 !important; text-align:center;
     z-index:10;
   }
   
-  /* Noms au-dessus des scores */
+  /* Noms fixes au-dessus des scores */
   .player-name{
-    position:absolute !important; top:12px !important; left:50% !important; transform:translateX(-50%)!important;
-    font-size:clamp(15px, 6vmin, 22px) !important; font-weight:900;
-    color:var(--text)!important; opacity:0.8;
+    position:absolute !important; top:15px !important; left:50% !important; transform:translateX(-50%)!important;
+    font-size:clamp(14px, 5vmin, 20px) !important; font-weight:900;
+    color:var(--text)!important; opacity:0.7;
     text-shadow:none; background:transparent; padding:0; border:none; box-shadow:none;
     z-index:20;
   }
   
-  /* Indicateur de service : Centré Pile */
+  /* Service Indicateur centré */
   .serve-indicator{
-    position:absolute !important; top:48px !important; left:50% !important; transform:translateX(-50%)!important;
+    position:absolute !important; top:50% !important; left:50% !important; transform:translate(-50%, -50%) !important;
     font-size:10px !important; padding:2px 8px !important; z-index:100;
-    white-space:nowrap;
+    white-space:nowrap; opacity:0.6;
   }
 
-  /* Indicateurs secondaires DANS LES COINS */
+  /* Indicateurs secondaires (G/D bas) */
   .set-dots, .timeout-dots{
     position:absolute !important; bottom:12px !important;
-    display:flex !important; gap:5px !important;
-    z-index:50;
+    display:flex !important; gap:6px !important; z-index:50;
   }
-  /* Panel GAUCHE (0) */
-  #setdots-0{left:12px !important; right:auto !important}
-  #tdots-0{right:12px !important; left:auto !important}
-  
-  /* Panel DROITE (1) */
-  #setdots-1{right:12px !important; left:auto !important; flex-direction:row-reverse}
-  #tdots-1{left:12px !important; right:auto !important}
-  
-  /* MENU ULTRA SIMPLIFIE : 3 Icones Seules */
-  .bottom-bar{
-    position:fixed !important; bottom:10px !important; padding:0 !important; left:50% !important; 
-    transform:translateX(-50%) !important;
-    width:auto !important; z-index:300; pointer-events:none;
-  }
-  .pill{
-    background:transparent !important; border:none !important; box-shadow:none !important; 
-    padding:0 !important; margin:0 !important; gap:15px !important; pointer-events:auto;
-  }
-  /* Masquer tous les boutons sauf les 3 vitaux */
-  .iBtn:not(#btn-undo):not(#btn-let):not(#btn-more){ display:none !important }
-  
-  .iBtn{
-    background:rgba(255,255,255,0.75) !important; backdrop-filter:blur(10px); 
-    border:1px solid rgba(0,0,0,0.15) !important;
-    width:46px !important; height:46px !important; border-radius:50% !important;
-    display:flex !important; justify-content:center !important; align-items:center !important;
-    padding:0 !important; box-shadow:0 3px 10px rgba(0,0,0,0.2) !important;
-  }
-  .dark .iBtn{background:rgba(50,50,50,0.7) !important; border-color:rgba(255,255,255,0.1) !important;}
-  .iBtn .ico{font-size:22px !important; margin:0 !important}
-  .iBtn .lbl, .pill-sep{display:none !important}
+  #setdots-0{left:15px !important; right:auto !important}
+  #tdots-0{right:15px !important; left:auto !important}
+  #setdots-1{right:15px !important; left:auto !important; flex-direction:row-reverse}
+  #tdots-1{left:15px !important; right:auto !important}
 }
 
 /* ── Splash / Home ── */
