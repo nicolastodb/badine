@@ -222,13 +222,13 @@ html,body{height:100%;background:var(--bg);overflow:hidden;-webkit-touch-callout
 /* Bottom pill */
 .bottom-bar{
   display:flex;align-items:center;justify-content:center;
-  padding:6px 16px max(16px,env(safe-area-inset-bottom,16px));z-index:20;
+  padding:0;z-index:20;
 }
 .pill{
   display:flex;align-items:center;gap:4px;
   background:rgba(255,255,255,0.55);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
-  border:1px solid rgba(255,255,255,0.2);border-radius:999px;padding:6px 8px;
-  box-shadow:0 8px 32px rgba(0,0,0,0.12);
+  border-top:1px solid rgba(255,255,255,0.2);padding:6px 8px max(16px,env(safe-area-inset-bottom,16px));
+  width:100%;box-shadow:0 -4px 16px rgba(0,0,0,0.05);
 }
 .dark .pill{background:rgba(28,28,30,0.55);border-color:rgba(255,255,255,0.08);}
 .iBtn{
@@ -238,7 +238,7 @@ html,body{height:100%;background:var(--bg);overflow:hidden;-webkit-touch-callout
   transition:background .15s,color .15s;min-width:48px;
 }
 @media(orientation:portrait){
-  .pill{padding:8px;gap:2px;width:100%;max-width:440px}
+  .pill{padding:8px 8px max(24px,env(safe-area-inset-bottom,24px));gap:2px;width:100%;max-width:none}
   .iBtn{padding:12px 2px;min-width:0;flex:1;overflow:hidden;gap:6px}
   .iBtn .ico{font-size:26px}
   .iBtn .lbl{font-size:10px;letter-spacing:-0.01em}
@@ -525,8 +525,8 @@ ist-empty{color:var(--muted);font-size:14px;margin-top:40px}
   .panel{gap:2px}
   .serve-indicator{display:none}
   .live-info{display:none}
-  .bottom-bar{padding:4px 16px max(8px,env(safe-area-inset-bottom,8px))}
-  .pill{padding:4px 8px;width:100%;max-width:550px}
+  .bottom-bar{padding:0}
+  .pill{padding:4px 8px max(12px,env(safe-area-inset-bottom,12px));width:100%;max-width:none}
   .iBtn{padding:7px 2px;min-width:0;flex:1;overflow:hidden}
   .iBtn .ico{font-size:15px}
   .iBtn .lbl{font-size:8px}
@@ -561,7 +561,7 @@ ist-empty{color:var(--muted);font-size:14px;margin-top:40px}
   #tdots-1{right:unset;left:20px}
   .serve-indicator{left:50%;transform:translateX(-50%);bottom:max(88px, 9vh);font-size:10px}
   .live-graph{top:0;height:40px}
-  .bottom-bar{padding:6px max(env(safe-area-inset-right,12px),12px) max(8px,env(safe-area-inset-bottom,8px))}
+  .bottom-bar{padding:0}
 }
 /* Tablet portrait/landscape */
 /* UI cleanup on modal open */
@@ -886,8 +886,6 @@ body:has(.open) .live-info {
   <button class="iBtn" id="btn-history"><span class="ico">📈</span><span class="lbl">Stats</span></button>
   <button class="iBtn" id="btn-voice-toggle"><span class="ico">◎</span><span class="lbl">Muet</span></button>
   <button class="iBtn" id="btn-share"><span class="ico">↗</span><span class="lbl">Partager</span></button>
-  <div class="overflow-sep"></div>
-  <button class="iBtn" id="btn-fullscreen"><span class="ico">⛶</span><span class="lbl">Plein écran</span></button>
   <div class="overflow-sep"></div>
   <div style="font-size:9px;color:var(--muted);text-align:center;padding:8px 0 4px;letter-spacing:.05em;text-transform:uppercase;opacity:0.6">Badine v11.3</div>
 </div>
@@ -2498,20 +2496,6 @@ addTap('btn-undo',()=>{
   }
   btn.dataset.confirm='1';btn.querySelector('.lbl').textContent='Confirmer';vibrate(30);
   undoTapTimer=setTimeout(()=>{btn.dataset.confirm='0';btn.querySelector('.lbl').textContent='Annuler';},2000);
-});
-
-// Fullscreen
-addTap('btn-fullscreen',()=>{
-  const btn=document.getElementById('btn-fullscreen');
-  if(!document.fullscreenElement){
-    document.documentElement.requestFullscreen().catch(()=>{});
-    if(btn)btn.querySelector('.ico').textContent='⛶';
-  }else{document.exitFullscreen().catch(()=>{});}
-});
-document.addEventListener('fullscreenchange',()=>{
-  const btn=document.getElementById('btn-fullscreen');if(!btn)return;
-  btn.querySelector('.ico').textContent=document.fullscreenElement?'⛶':'⛶';
-  btn.querySelector('.lbl').textContent=document.fullscreenElement?'Quitter':'Plein';
 });
 
 // Kiosk mode
