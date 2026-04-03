@@ -569,75 +569,7 @@ ist-empty{color:var(--muted);font-size:14px;margin-top:40px}
   .live-graph{top:0;height:40px}
   .bottom-bar{padding:0}
 }
-/* Responsive landscape — small screens (phones) SCOREBOARD */
-@media(orientation:landscape)and(max-height:440px){
-  /* Minimalisme - Cacher la vue 3D et le header */
-  .perspective-wrap{display:none !important}
-  .header{display:none !important}
-  .side-band{display:none !important}
-  .app{padding-top:0 !important; overflow:hidden;}
-  
-  .court{flex-direction:row !important;}
-  .panel{
-     position:relative; width:50%; height:100vh;
-     justify-content:center; align-items:center; padding:0; gap:0;
-  }
-  #panel-0{background:rgba(0,0,0,0.04); border-right:2px solid var(--border)}
-  .dark #panel-0{background:rgba(255,255,255,0.03)}
-  #panel-1{background:transparent}
 
-  /* Gros scores */
-  .score{
-    position:relative; top:auto; left:auto; transform:none !important;
-    font-size:min(45vw, 85dvh) !important;
-    opacity:1; pointer-events:none; order:2;
-    line-height:0.85; margin-bottom:20px; text-align:center;
-  }
-  /* Clic sur tout le panel pour marquer */
-  .panel{cursor:pointer}
-  
-  /* Noms bien visibles en haut */
-  .player-name{
-    position:absolute !important; top:15px !important; left:50% !important; transform:translateX(-50%)!important;
-    font-size:clamp(18px, 4vmin, 28px) !important; font-weight:900;
-    color:var(--text)!important; text-shadow:none; background:transparent; padding:0; border:none; box-shadow:none;
-  }
-  
-  /* Serve Indicator ancré au score */
-  .serve-indicator{
-    position:absolute; top:60px; left:50%; transform:translateX(-50%);
-    font-size:12px; padding:4px 12px; z-index:210;
-  }
-  .live-info{display:none}
-
-  /* Dots en bas */
-  .timeout-dots, .set-dots{
-    position:absolute !important; bottom:20px !important;
-  }
-  .set-dots{left:auto !important; right:20px !important; flex-direction:row-reverse}
-  .timeout-dots{right:auto !important; left:20px !important}
-  #setdots-1{left:20px !important; right:auto !important; flex-direction:row}
-  #tdots-1{right:20px !important; left:auto !important}
-  
-  /* Barre du bas ultra minimaliste */
-  .bottom-bar{
-    position:fixed; bottom:0; padding:0; left:50%; transform:translateX(-50%);
-    width:auto; justify-content:center; align-items:flex-end; z-index:300;
-  }
-  .pill{
-    background:transparent; border:none; box-shadow:none; padding:4px; margin-bottom:4px;
-    gap:8px; min-width:0;
-  }
-  .iBtn{
-    background:rgba(255,255,255,0.6); backdrop-filter:blur(15px); -webkit-backdrop-filter:blur(15px);
-    border:1px solid rgba(200,200,200,0.5);
-    padding:0; border-radius:50%; width:44px; height:44px;
-    box-shadow:0 4px 12px rgba(0,0,0,0.15); display:flex; justify-content:center; align-items:center;
-  }
-  .dark .iBtn{background:rgba(28,28,30,0.6);border-color:rgba(255,255,255,0.2)}
-  .iBtn .ico{font-size:20px; margin:0}
-  .iBtn .lbl, .pill-sep{display:none}
-}
 /* Tablet portrait/landscape */
 /* UI cleanup on modal open */
 body:has(.open) .live-graph,
@@ -657,6 +589,88 @@ body:has(.open) .live-info {
   .pill-sep{height:40px}
   .side-band{width:clamp(40px,7vw,100px)}
   .live-info{font-size:clamp(13px,2vmin,18px)}
+}
+
+/* 📱 Responsive landscape — small screens (phones) SCOREBOARD v3 */
+@media(orientation:landscape)and(max-height:500px){
+  /* Nettoyage radical - Court et Header out */
+  .perspective-wrap, .court-svg, .header, .side-band, .live-info, .player-level, .live-graph, .sets-bar{display:none !important}
+  .app{padding-top:0 !important; overflow:hidden;}
+  
+  .court{flex-direction:row !important; display:flex !important; height:100vh !important;}
+  .panel{
+     position:relative !important; width:50% !important; height:100% !important;
+     display:flex !important; flex-direction:column !important;
+     justify-content:center !important; align-items:center !important; 
+     padding:0 !important; margin:0 !important;
+     background: transparent !important;
+  }
+  #panel-0{background:rgba(0,0,0,0.05) !important; border-right:1px solid var(--border) !important}
+  .dark #panel-0{background:rgba(255,255,255,0.03) !important}
+  #panel-1{background:transparent !important}
+
+  /* Scores monumentaux centrés */
+  .score{
+    position:relative !important; top:auto !important; left:auto !important; transform:none !important;
+    font-size:min(45vw, 82dvh) !important; font-weight:900 !important;
+    opacity:1 !important; pointer-events:none; 
+    line-height:0.9 !important; margin:0 !important; text-align:center;
+    z-index:10;
+  }
+  
+  /* Noms au-dessus des scores */
+  .player-name{
+    position:absolute !important; top:12px !important; left:50% !important; transform:translateX(-50%)!important;
+    font-size:clamp(15px, 6vmin, 22px) !important; font-weight:900;
+    color:var(--text)!important; opacity:0.8;
+    text-shadow:none; background:transparent; padding:0; border:none; box-shadow:none;
+    z-index:20;
+  }
+  
+  /* Indicateur de service : Centré Pile */
+  .serve-indicator{
+    position:absolute !important; top:48px !important; left:50% !important; transform:translateX(-50%)!important;
+    font-size:10px !important; padding:2px 8px !important; z-index:100;
+    white-space:nowrap;
+  }
+
+  /* Indicateurs secondaires DANS LES COINS */
+  .set-dots, .timeout-dots{
+    position:absolute !important; bottom:12px !important;
+    display:flex !important; gap:5px !important;
+    z-index:50;
+  }
+  /* Panel GAUCHE (0) */
+  #setdots-0{left:12px !important; right:auto !important}
+  #tdots-0{right:12px !important; left:auto !important}
+  
+  /* Panel DROITE (1) */
+  #setdots-1{right:12px !important; left:auto !important; flex-direction:row-reverse}
+  #tdots-1{left:12px !important; right:auto !important}
+  
+  /* MENU ULTRA SIMPLIFIE : 3 Icones Seules */
+  .bottom-bar{
+    position:fixed !important; bottom:10px !important; padding:0 !important; left:50% !important; 
+    transform:translateX(-50%) !important;
+    width:auto !important; z-index:300; pointer-events:none;
+  }
+  .pill{
+    background:transparent !important; border:none !important; box-shadow:none !important; 
+    padding:0 !important; margin:0 !important; gap:15px !important; pointer-events:auto;
+  }
+  /* Masquer tous les boutons sauf les 3 vitaux */
+  .iBtn:not(#btn-undo):not(#btn-let):not(#btn-more){ display:none !important }
+  
+  .iBtn{
+    background:rgba(255,255,255,0.75) !important; backdrop-filter:blur(10px); 
+    border:1px solid rgba(0,0,0,0.15) !important;
+    width:46px !important; height:46px !important; border-radius:50% !important;
+    display:flex !important; justify-content:center !important; align-items:center !important;
+    padding:0 !important; box-shadow:0 3px 10px rgba(0,0,0,0.2) !important;
+  }
+  .dark .iBtn{background:rgba(50,50,50,0.7) !important; border-color:rgba(255,255,255,0.1) !important;}
+  .iBtn .ico{font-size:22px !important; margin:0 !important}
+  .iBtn .lbl, .pill-sep{display:none !important}
 }
 
 /* ── Splash / Home ── */
