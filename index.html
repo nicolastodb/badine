@@ -170,7 +170,7 @@ html,body{height:100%;background:var(--bg);overflow:hidden;-webkit-touch-callout
 .player-name{
   font-size:clamp(13px,2vmin,20px);font-weight:600;letter-spacing:.02em;text-transform:uppercase;
   color:var(--player-color,var(--muted));transition:all .5s cubic-bezier(.4,0,.2,1);
-  pointer-events:none;z-index:110;order:2;
+  pointer-events:auto;cursor:pointer;z-index:110;order:2;
 }
 .name-input{
   font-family:system-ui,-apple-system,sans-serif;font-size:clamp(13px,2vmin,20px);font-weight:600;
@@ -2046,9 +2046,27 @@ function setupNameEdit(p){
     nameEl.style.display='';input.style.display='none';
     render();saveState();
   }
-  nameEl.addEventListener('pointerdown',e=>{e.stopPropagation();pressTimer=setTimeout(()=>{hapticLongPress();startEdit();},600);},{passive:true});
-  nameEl.addEventListener('pointerup',()=>clearTimeout(pressTimer),{passive:true});
-  nameEl.addEventListener('pointermove',()=>clearTimeout(pressTimer),{passive:true});
+  let pressActive = false;
+  nameEl.addEventListener('pointerdown',e=>{
+    e.stopPropagation();
+    pressActive = true;
+    pressTimer=setTimeout(()=>{
+      pressActive = false;
+      hapticLongPress();
+      startEdit();
+    },600);
+  },{passive:true});
+  nameEl.addEventListener('pointerup',()=>{
+    if(pressActive){
+      clearTimeout(pressTimer);
+      pressActive = false;
+      showPlayerCard(names[sideSwapped?1-p:p]);
+    }
+  },{passive:true});
+  nameEl.addEventListener('pointercancel',()=>{
+    clearTimeout(pressTimer);
+    pressActive = false;
+  },{passive:true});
   input.addEventListener('blur',commit);
   input.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();input.blur();}});
 }
@@ -2156,16 +2174,85 @@ function renderSession(targetEl){
   });
 }
 
-function showPlayerCard(name){
-  const matches=matchHistory.filter(m=>m.names.includes(name));
-  if(!matches.length)return;
-  const wins=matches.filter(m=>m.winner!==null&&m.names[m.winner]===name).length;
+async function showPlayerCard(name){
   const panel=document.getElementById('player-panel');
   const title=document.getElementById('player-panel-name');
   const list=document.getElementById('player-panel-list');
   if(!panel||!title||!list)return;
+  
+  const matches=matchHistory.filter(m=>m.names.includes(name));
+  const wins=matches.filter(m=>m.winner!==null&&m.names[m.winner]===name).length;
+  
   title.textContent=`${sanitize(name)} — ${wins}V ${matches.length-wins}D`;
-  list.innerHTML='';
+  list.innerHTML='<div style="padding:10px;text-align:center;font-size:12px;color:var(--muted)">Recherche des infos FFBaD...</div>';
+  
+  document.getElementById('history-panel').classList.remove('open');
+  panel.classList.add('open');
+
+  const kp = knownPlayers.find(k=>(k.name||'').toUpperCase()===name.toUpperCase());
+  let ffhtml = '';
+  
+  if(kp && kp.licence){
+    const cached = playerProfilesCache[kp.licence];
+    if(cached){
+       ffhtml = buildFFBadCardHtml(cached);
+    } else {
+       try{
+         const r=await fetch(`ffbad.php?action=info&licence=${encodeURIComponent(kp.licence)}`,{cache:'no-store'});
+         if(r.ok){
+           const d=await r.json();
+           if(!d.error) {
+             playerProfilesCache[kp.licence] = d;
+             try{localStorage.setItem('badine_profiles',JSON.stringify(playerProfilesCache));}catch(_){}
+             ffhtml = buildFFBadCardHtml(d);
+           } else {
+             ffhtml = `<div style="padding:10px;background:var(--mid);border-radius:12px;text-align:center;font-size:12px;color:var(--muted)">Infos FFBaD indisponibles</div>`;
+           }
+         }
+       }catch(_){
+         ffhtml = `<div style="padding:10px;background:var(--mid);border-radius:12px;text-align:center;font-size:12px;color:var(--muted)">Recherche impossible (hors-ligne)</div>`;
+       }
+    }
+  } else {
+    try {
+      const r=await fetch(`ffbad.php?action=search&q=${encodeURIComponent(name)}`,{cache:'no-store'});
+      if(r.ok) {
+        const d=await r.json();
+        if(d.results && d.results.length === 1) {
+           const lic = d.results[0].licence;
+           const r2=await fetch(`ffbad.php?action=info&licence=${encodeURIComponent(lic)}`,{cache:'no-store'});
+           if(r2.ok) {
+             const d2=await r2.json();
+             if(!d2.error) {
+               playerProfilesCache[lic] = d2;
+               ffhtml = buildFFBadCardHtml(d2);
+             }
+           }
+        } else if (d.results && d.results.length > 1) {
+           ffhtml = `<div style="padding:10px;background:var(--mid);border-radius:12px;text-align:center;font-size:12px;color:var(--muted)">Plusieurs joueurs trouvés sur FFBaD</div>`;
+        } else {
+           ffhtml = `<div style="padding:10px;background:var(--mid);border-radius:12px;text-align:center;font-size:12px;color:var(--muted)">Joueur non trouvé sur FFBaD</div>`;
+        }
+      }
+    }catch(_){
+       ffhtml = `<div style="padding:10px;background:var(--mid);border-radius:12px;text-align:center;font-size:12px;color:var(--muted)">Recherche impossible (hors-ligne)</div>`;
+    }
+  }
+  
+  if(!ffhtml && kp && kp.club) {
+      ffhtml = `<div style="padding:16px;background:var(--mid);border-radius:12px;margin-bottom:16px;text-align:center">
+        <div style="font-size:14px;font-weight:700">${sanitize(kp.club)}</div>
+        ${kp.level?`<div style="font-size:12px;color:var(--accent);margin-top:4px">${sanitize(kp.level)}</div>`:''}
+      </div>`;
+  }
+  
+  list.innerHTML = (ffhtml ? ffhtml + '<div style="margin-top:16px;font-weight:700;font-size:13px;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.05em">Historique des matchs</div>' : '');
+  
+  if(!matches.length){
+    list.innerHTML += `<div style="font-size:13px;color:var(--muted);text-align:center;padding:20px 0">Aucun historique local</div>`;
+    return;
+  }
+  
   matches.forEach(m=>{
     const isWin=m.winner!==null&&m.names[m.winner]===name;
     const opp=m.names[m.names[0]===name?1:0];
@@ -2180,8 +2267,37 @@ function showPlayerCard(name){
     </div>`;
     list.appendChild(item);
   });
-  document.getElementById('history-panel').classList.remove('open');
-  panel.classList.add('open');
+}
+
+function buildFFBadCardHtml(d) {
+  let rankingsHtml = '';
+  if(d.rankings&&d.rankings.length){
+    rankingsHtml=d.rankings.map(r=>`
+      <div class="prank-row" style="background:var(--panel);">
+        <span class="prank-disc">${DISC_LABELS[r.discipline]||r.discipline}</span>
+        <span><span class="prank-val">${r.niveau||r.points}</span><span class="prank-pts">${r.niveau?r.points+'pts':''} ${r.rang?'#'+r.rang:''}</span></span>
+      </div>`).join('');
+  } else {
+    rankingsHtml='<div class="prank-row" style="background:var(--panel);"><span class="prank-disc">Pas de classement</span></div>';
+  }
+  
+  const initials=(d.prenom?d.prenom[0]:'')+(d.nom?d.nom[0]:'');
+  return \`
+    <div style="background:var(--mid);border-radius:16px;padding:16px;margin-bottom:16px;border:1px solid var(--border)">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+        <div style="width:48px;height:48px;border-radius:50%;background:var(--panel);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:var(--text);border:2px solid var(--accent);flex-shrink:0">
+          \${initials.toUpperCase()||'?'}
+        </div>
+        <div style="overflow:hidden">
+          <div style="font-size:15px;font-weight:700;text-transform:uppercase;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">\${d.prenom} \${d.nom}</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">\${d.club||''} <span style="opacity:0.5;font-size:10px;margin-left:4px">\${d.licence}</span></div>
+        </div>
+      </div>
+      <div class="pcard-rankings">
+        \${rankingsHtml}
+      </div>
+    </div>
+  \`;
 }
 
 function renderHistory(){
