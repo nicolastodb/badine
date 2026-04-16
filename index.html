@@ -1390,6 +1390,7 @@ let knownPlayers=[],setupSrv=0;
 let playerLevels=['','']; // FFBaD level display
 let playerProfiles=[null,null]; // {licence,nom,prenom,club,rankings}
 let sessionMatches=[]; // current session: [{names,sets,winner,date}]
+let playerProfilesCache={}; // Cache pour mode hors-ligne
 
 function fresh(){return{sc:[0,0],srv:0,sets:[],won:[0,0],over:false,winner:null}}
 function getColor(k){const p=COLOR_PALETTE[k]||COLOR_PALETTE[0];return lightMode?p.light:p.dark}
@@ -1430,11 +1431,31 @@ function loadState(){
     trainingMode=d.trainingMode??false;letCount=d.letCount??0;timeoutsLeft=d.timeoutsLeft??[2,2];
   }catch(e){console.warn('[Badine] loadState error',e);}
 }
-function loadKnownPlayers(){try{knownPlayers=JSON.parse(localStorage.getItem('badine_players'))||[];}catch(_){}}
-function saveKnownPlayer(n){
-  if(!n||n.length<2)return;
-  n=n.trim().toUpperCase();
-  if(!knownPlayers.includes(n)){knownPlayers.unshift(n);if(knownPlayers.length>20)knownPlayers.pop();try{localStorage.setItem('badine_players',JSON.stringify(knownPlayers));}catch(_){}}
+function formatPlayerName(fname, lname) {
+  fname = (fname||'').toLowerCase().replace(/(^|\s|-)\S/g, l => l.toUpperCase());
+  lname = (lname||'').toUpperCase();
+  return (`${fname} ${lname}`).trim();
+}
+function loadKnownPlayers(){
+  try{
+    const raw=JSON.parse(localStorage.getItem('badine_players'))||[];
+    knownPlayers=raw.map(p=>(typeof p==='string')?{name:p}:p);
+  }catch(_){knownPlayers=[];}
+  try{playerProfilesCache=JSON.parse(localStorage.getItem('badine_profiles'))||{};}catch(_){}
+}
+function saveKnownPlayer(pObj){
+  if(!pObj)return;
+  let o = (typeof pObj==='string')?{name:pObj.trim().toUpperCase()}:pObj;
+  if(!o.name||o.name.length<2)return;
+  knownPlayers=knownPlayers.filter(k=>(k.name||'').toUpperCase()!==o.name.toUpperCase());
+  knownPlayers.unshift(o);
+  if(knownPlayers.length>30)knownPlayers.pop();
+  try{localStorage.setItem('badine_players',JSON.stringify(knownPlayers));}catch(_){}
+}
+function saveProfileCache(licence, data){
+  if(!licence||!data)return;
+  playerProfilesCache[licence]=data;
+  try{localStorage.setItem('badine_profiles',JSON.stringify(playerProfilesCache));}catch(_){}
 }
 
 /* ════════ WAKE LOCK ════════ */
@@ -2416,15 +2437,6 @@ function closeSetupAndStart(){
 }
 
 /* ════════ PLAYER DROPDOWN ════════ */
-function showPlayerDropdown(p,q){
-  const drop=document.getElementById(`pdrop-${p}`);if(!drop)return;
-  q=q.toUpperCase();
-  const matches=knownPlayers.filter(n=>n.includes(q)&&n!==q).slice(0,5);
-  if(!matches.length){drop.classList.remove('open');return;}
-  const st=name=>{const s=getPlayerStats(name);return s.w+s.l>0?` ${s.w}V-${s.l}D`:''};
-  drop.innerHTML=matches.map(n=>`<div class="player-opt" data-name="${n}">${n}<span style="float:right;opacity:.5;font-size:10px">${st(n)}</span></div>`).join('');
-  drop.classList.add('open');
-}
 function hidePlayerDropdown(p){const drop=document.getElementById(`pdrop-${p}`);if(drop)drop.classList.remove('open');}
 function setupPlayerInputs(){
   [0,1].forEach(p=>{
@@ -2972,7 +2984,7 @@ function showFFBadResults(p, results, query){
   }
   if(hint)hint.textContent=`${results.length} résultat${results.length>1?'s':''} FFBaD`;
   drop.innerHTML=results.map(r=>{
-    const full=(`${r.prenom} ${r.nom}`).trim();
+    const full=formatPlayerName(r.prenom, r.nom);
     const st=getPlayerStats(full);
     const statsStr=st.w+st.l>0?` · ${st.w}V-${st.l}D`:'';
     return `<div class="player-opt" data-name="${full}" data-licence="${r.licence}" data-player="${p}" style="padding:10px 12px">
@@ -2987,36 +2999,62 @@ function showKnownPlayers(p, query){
   const drop=document.getElementById(`pdrop-${p}`);
   if(!drop)return;
   const q=query.toUpperCase();
-  const matches=knownPlayers.filter(n=>n.includes(q)&&n!==q).slice(0,5);
+  const matches=knownPlayers.filter(k=>{
+    const n=(k.name||'').toUpperCase();
+    return n.includes(q)&&n!==q;
+  }).slice(0,6);
   if(!matches.length){drop.classList.remove('open');return;}
   const st=name=>{const s=getPlayerStats(name);return s.w+s.l>0?` ${s.w}V-${s.l}D`:''};
-  drop.innerHTML=matches.map(n=>`<div class="player-opt" data-name="${n}"><span class="po-name">${n}</span><span class="po-club">${st(n)}</span></div>`).join('');
+  drop.innerHTML=matches.map(k=>{
+    const n = k.name||'';
+    const sub = k.club?`${k.club} ${k.level?`(${k.level})`:''}`:'';
+    const licenceAttr = k.licence?`data-licence="${k.licence}"`:'';
+    return `<div class="player-opt" data-name="${n}" ${licenceAttr}><span class="po-name">${n}</span><span class="po-club">${sub}${st(n)}</span></div>`;
+  }).join('');
   drop.classList.add('open');
 }
 
 async function ffbadLoadInfo(p, licence, nameHint){
   if(!licence)return;
   const hint=document.getElementById(`pcard-${p}-hint`);
-  if(hint)hint.innerHTML='<span class="pcard-spinner"></span> Chargement…';
+
+  const cached = playerProfilesCache[licence];
+  if(cached){
+    showPlayerProfile(p, cached);
+    if(hint)hint.innerHTML='<span class="pcard-spinner"></span> Actualisation…';
+  } else {
+    if(hint)hint.innerHTML='<span class="pcard-spinner"></span> Chargement…';
+  }
+
   try{
     const r=await fetch(`ffbad.php?action=info&licence=${encodeURIComponent(licence)}`,{cache:'no-store'});
     if(!r.ok)throw new Error();
     const d=await r.json();
     if(!d.error){
       showPlayerProfile(p, d);
-      // Save to knownPlayers
-      const full=(`${d.prenom} ${d.nom}`).trim();
-      if(full.length>1) saveKnownPlayer(full);
-    } else {
-      // API error: fallback — just use the name
+      saveProfileCache(licence, d);
+      const full = formatPlayerName(d.prenom, d.nom);
+      names[p] = full.slice(0,16); // force cleanly formatted name
+      let bestLvl = '';
+      if(d.rankings&&d.rankings.length){
+        const best=d.rankings.sort((a,b)=>b.points-a.points)[0];
+        bestLvl = best.niveau||`${best.points}pts`;
+      }
+      if(full.length>1) saveKnownPlayer({name:full, licence:licence, club:d.club||'', level:bestLvl});
+      if(hint)hint.textContent=''; // Clear on success
+    } else if(!cached) {
       if(hint)hint.textContent='Classement indisponible';
-      if(nameHint) names[p]=nameHint.slice(0,16);
+      if(nameHint) { names[p]=nameHint.slice(0,16); saveKnownPlayer({name:nameHint}); }
       updateServerButtons();
     }
   }catch(_){
-    if(hint)hint.textContent='Hors ligne — classement non disponible';
-    if(nameHint) names[p]=nameHint.slice(0,16);
-    updateServerButtons();
+    if(cached) {
+      if(hint)hint.textContent='Mode hors-ligne (données en cache)';
+    } else {
+      if(hint)hint.textContent='Hors ligne — classement non disponible';
+      if(nameHint) { names[p]=nameHint.slice(0,16); saveKnownPlayer({name:nameHint}); }
+      updateServerButtons();
+    }
   }
 }
 
@@ -3035,7 +3073,7 @@ const DISC_LABELS={'SH':'Simple H','SD':'Simple D','DH':'Double H','DD':'Double 
 function showPlayerProfile(p, data){
   playerProfiles[p]=data;
   // Name for game
-  const fullName=(data.prenom+' '+data.nom).trim();
+  const fullName=formatPlayerName(data.prenom, data.nom);
   names[p]=fullName.slice(0,16); // cap for display
 
   // Update level for court display
@@ -3126,7 +3164,7 @@ document.getElementById('import-file').addEventListener('change',e=>{
       }
       // Restore known players
       if(Array.isArray(d._players)){
-        d._players.filter(p=>typeof p==='string').forEach(p=>saveKnownPlayer(p));
+        d._players.forEach(p=>saveKnownPlayer(p));
       }
       // Restore player stats
       if(d._stats&&typeof d._stats==='object'){
