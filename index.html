@@ -227,6 +227,22 @@ html,body{height:100%;background:var(--bg);overflow:hidden;-webkit-touch-callout
   position:absolute;top:max(14px,env(safe-area-inset-top,14px));left:12px;
   width:7px;height:7px;border-radius:50%;background:var(--border);z-index:50;transition:background .3s;
 }
+/* Offline banner */
+#offline-banner{
+  display:none;position:fixed;top:0;left:0;right:0;z-index:900;
+  background:#FF9500;color:#fff;font-size:12px;font-weight:700;letter-spacing:.06em;
+  text-align:center;padding:6px 12px max(6px,env(safe-area-inset-top,6px));
+  text-transform:uppercase;
+}
+#offline-banner.show{display:block}
+/* Sync dot in header */
+.sync-dot{
+  width:6px;height:6px;border-radius:50%;background:var(--border);
+  transition:background .4s;flex-shrink:0;margin-left:2px;
+}
+.sync-dot.ok{background:#34C759}
+.sync-dot.fail{background:#FF3B30;animation:syncblink .8s ease-in-out 3}
+@keyframes syncblink{0%,100%{opacity:1}50%{opacity:.2}}
 /* Bottom pill */
 .bottom-bar{
   display:flex;align-items:center;justify-content:center;
@@ -878,6 +894,7 @@ body:has(.open) .live-info {
 <div class="side-band" id="band-0"></div>
 <div class="side-band" id="band-1"></div>
 
+<div id="offline-banner">Hors-ligne — synchronisation suspendue</div>
 <div class="app" id="app">
 <div id="watch-dot"></div>
 <div class="training-badge" id="training-badge">Entraînement</div>
@@ -896,6 +913,7 @@ body:has(.open) .live-info {
     </div>
     <div class="hdr-sep"></div>
     <button class="icon-btn" id="btn-settings">≡</button>
+    <div class="sync-dot" id="sync-dot" title="Synchronisation serveur"></div>
   </div>
 </div>
 
@@ -1402,6 +1420,13 @@ function setActive(selector,condition){document.querySelectorAll(selector).forEa
 const VER='5';
 let _bc=null;
 try{_bc=new BroadcastChannel('badine');}catch(_){}
+let _syncDotTimer=null;
+function setSyncDot(state){
+  const dot=document.getElementById('sync-dot');if(!dot)return;
+  dot.className='sync-dot'+(state==='ok'?' ok':state==='fail'?' fail':'');
+  clearTimeout(_syncDotTimer);
+  if(state!==''){_syncDotTimer=setTimeout(()=>dot.className='sync-dot',4000);}
+}
 function saveState(){
   try{
     localStorage.setItem('badine',JSON.stringify({
@@ -1410,7 +1435,9 @@ function saveState(){
       currentRun,setStartSec,setDurations,midBreakDone,
       pointLog,maxRun,gpAttempts,gpConverted,trainingMode,letCount,timeoutsLeft
     }));
-    fetch(POLL_URL.replace('cmd','state'),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({names,G,matchSeconds})}).catch(()=>{});
+    fetch(POLL_URL.replace('cmd','state'),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({names,G,matchSeconds})})
+      .then(r=>{if(r.ok)setSyncDot('ok');else setSyncDot('fail');})
+      .catch(()=>setSyncDot('fail'));
     if(_bc)try{_bc.postMessage({names,G,matchSeconds});}catch(_){}
   }catch(e){console.warn('[Badine] saveState error',e);}
 }
@@ -2770,6 +2797,8 @@ document.addEventListener('keydown',e=>{
   if(['ArrowRight','d','D'].includes(e.key)){e.preventDefault();unlockSpeech();addPoint(sideSwapped?0:1);}
   if(['z','Z','Backspace'].includes(e.key)){e.preventDefault();undoPoint();}
   if(e.key==='Escape'||e.key===' '){e.preventDefault();if(pauseActive){endPause();speak('Reprise.');}else{startPause('manual',0,false,'Pause','Continuer pour reprendre');speak('Pause.');}}
+  if(e.key==='?'||e.key==='/'){e.preventDefault();showToast('← → : point  |  Z : annuler  |  Espace : pause  |  S : changer côtés');}
+  if(e.key==='s'||e.key==='S'){e.preventDefault();switchSides();}
 });
 
 
@@ -3422,6 +3451,13 @@ const _tg=document.getElementById('training-group');if(_tg)_tg.addEventListener(
   document.querySelectorAll('[data-training]').forEach(b=>b.classList.toggle('on',b===btn));
 });
 
+/* ════════ OFFLINE / ONLINE ════════ */
+function updateOfflineBanner(){
+  document.getElementById('offline-banner').classList.toggle('show',!navigator.onLine);
+}
+window.addEventListener('online',updateOfflineBanner);
+window.addEventListener('offline',()=>{updateOfflineBanner();showToast('Hors-ligne — données sauvegardées localement');});
+
 /* ════════ INIT ════════ */
 if(localStorage.getItem('badine_ver')!==VER){localStorage.removeItem('badine');localStorage.setItem('badine_ver',VER);}
 loadState();loadKnownPlayers();loadSession();updateColors();
@@ -3436,6 +3472,7 @@ document.querySelectorAll('[data-pts]').forEach(b=>b.classList.toggle('on',parse
 document.querySelectorAll('[data-rule2]').forEach(b=>b.classList.toggle('on',(b.dataset.rule2==='1')===rule2));
 document.querySelectorAll('[data-beep]').forEach(b=>b.classList.toggle('on',(b.dataset.beep==='1')===beepOn));
 render();
+updateOfflineBanner();
 requestWakeLock();
 requestNotifPermission();
 setTimeout(openSplash,100);
