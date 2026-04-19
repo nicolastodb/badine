@@ -45,43 +45,49 @@ html,body{height:100%;background:var(--bg);overflow:hidden;-webkit-touch-callout
   pointer-events:none;overflow:hidden;
 }
 @media(orientation:portrait){
-  /* Terrain centré entre score en haut et noms/boutons en bas */
-  .perspective-wrap{padding-top:max(150px,18vh);padding-bottom:max(280px,32vh);align-items:center}
-  
-  .player-name, .name-input, .player-level {
-    position:absolute!important; left:50%; transform:translateX(-50%)!important; margin:0;
-  }
-  .player-name, .name-input { bottom:max(178px, 21vh); font-size:clamp(16px, 3.5vmin, 24px) !important; font-weight:800; }
-  .player-level { bottom:max(148px, 18vh); }
+  /* Court : espace pour le score en haut et les infos joueur en bas */
+  .perspective-wrap{padding-top:max(140px,17vh);padding-bottom:max(200px,24vh);align-items:center}
 
+  /* Tous les éléments d'info joueur : position:absolute dans leur panel (50% de largeur),
+     centrés horizontalement — les deux joueurs ne se chevauchent plus */
+  .player-name, .name-input, .player-level, .serve-indicator,
+  .set-dots, .timeout-dots {
+    position:absolute !important;
+    left:50%; right:unset !important;
+    transform:translateX(-50%) !important;
+    margin:0;
+  }
+
+  /* Empilement vertical depuis le bas du panel */
+  .set-dots   { bottom:10px;  display:flex;gap:6px;align-items:center;z-index:200;pointer-events:none; }
+  .timeout-dots{ bottom:36px; display:flex;gap:6px;align-items:center;z-index:200;pointer-events:none; }
+  .player-level{ bottom:64px; }
+  .player-name, .name-input {
+    bottom:88px;
+    font-size:clamp(14px,3.5vmin,22px) !important; font-weight:800;
+    max-width:90%; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
   .serve-indicator{
-    position:fixed;bottom:max(218px, 26vh);left:50%;transform:translateX(-50%);
-    z-index:200;pointer-events:none;white-space:nowrap;
-    font-size:14px;
+    bottom:120px;
+    z-index:200; pointer-events:none; white-space:nowrap; font-size:13px;
   }
 
-  .set-dots, .timeout-dots{
-    position:fixed;z-index:200;pointer-events:none;
-    display:flex;gap:6px;align-items:center;
+  /* Animation d'entrée du serve-indicator : conserver le translateX(-50%) */
+  @keyframes serveIn{
+    from{transform:translateX(-50%) scale(.85)}
+    to  {transform:translateX(-50%) scale(1)}
   }
 
-  /* P0 Left, P1 Right - ensured no horizontal clashing */
-  #setdots-0, #tdots-0{left:8%;right:unset}
-  #setdots-1, #tdots-1{right:8%;left:unset;flex-direction:row-reverse}
-
-  .timeout-dots{bottom:max(116px, 14vh)}
-  .set-dots{bottom:max(88px, 11vh)}
-  
   /* Visual: Timeouts = Gold Squares */
   .timeout-dots .timeout-dot{
     width:8px;height:8px;border-radius:1px !important;
     background:var(--border);opacity:0.3;
   }
   .timeout-dots .timeout-dot.active{background:#FFD700;opacity:1;box-shadow:0 0 4px #FFD70088}
-  
+
   /* Visual: Sets = Large Circles */
   .set-dots .sd{width:15px;height:15px;border-radius:50%;background:var(--border)}
-  
+
   .live-info{display:none !important}
   /* Portrait — score optimisé : 1 chiffre exploite la largeur, 2 chiffres réduit */
   .score   { font-size:min(28vw,34dvh) }
