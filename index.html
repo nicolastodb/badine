@@ -83,6 +83,9 @@ html,body{height:100%;background:var(--bg);overflow:hidden;-webkit-touch-callout
   .set-dots .sd{width:15px;height:15px;border-radius:50%;background:var(--border)}
   
   .live-info{display:none !important}
+  /* Portrait — score optimisé : 1 chiffre exploite la largeur, 2 chiffres réduit */
+  .score   { font-size:min(28vw,34dvh) }
+  .score.lg{ font-size:min(23vw,27dvh) !important }
 }
 @media(orientation:landscape){
   .perspective-wrap{align-items:center;padding-bottom:0}
@@ -218,6 +221,18 @@ html,body{height:100%;background:var(--bg);overflow:hidden;-webkit-touch-callout
   line-height:.88;color:var(--text);pointer-events:none;
   position:relative;z-index:100;order:1;
   transition:color .3s,transform .15s;
+  /* halo pour séparer le chiffre du terrain */
+  text-shadow:0 2px 12px rgba(0,0,0,0.12);
+}
+/* Mode clair : halo blanc pour isoler le texte sombre du fond teal */
+:root:not(.dark) .score{
+  text-shadow:
+    0 0 20px rgba(255,255,255,0.7),
+    0 2px 8px rgba(0,0,0,0.08);
+}
+/* Mode sombre : halo sombre renforcé (texte clair sur terrain teal foncé) */
+.dark .score{
+  text-shadow:0 2px 20px rgba(0,0,0,0.65),0 0 48px rgba(0,0,0,0.3);
 }
 /* Deuce: score rouge pulsant avec halo */
 @keyframes deuceGlow{
@@ -225,10 +240,13 @@ html,body{height:100%;background:var(--bg);overflow:hidden;-webkit-touch-callout
   50%{text-shadow:0 0 32px color-mix(in srgb,var(--danger) 55%,transparent)}
 }
 .score.deuce{color:var(--danger);animation:deuceGlow 1.4s ease-in-out infinite}
-/* Server: score légèrement surélevé */
-.score.serving{transform:scale(1.06);color:var(--player-color,var(--text))}
-/* Score auto-scale 2 chiffres */
-.score.lg{font-size:min(28vw,34dvh)!important}
+/* Server: score légèrement surélevé, avec halo couleur joueur */
+.score.serving{
+  transform:scale(1.06);color:var(--player-color,var(--text));
+  text-shadow:0 2px 20px color-mix(in srgb,var(--player-color,#000) 35%,transparent);
+}
+/* Score 2 chiffres — légèrement réduit pour tenir dans le panel */
+.score.lg{font-size:min(24vw,28dvh)!important}
 /* Kiosk mode: cache la bottom bar */
 .kiosk .bottom-bar{opacity:0;pointer-events:none;transition:opacity .4s}
 .kiosk .bottom-bar:hover{opacity:1;pointer-events:auto}
@@ -628,14 +646,33 @@ ist-empty{color:var(--muted);font-size:14px;margin-top:40px}
   .panel{position:absolute;inset:0;width:50%;height:100%;justify-content:flex-start;padding-top:0}
   #panel-0{left:0}
   #panel-1{left:50%}
-  .score{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:min(38vw, 45dvh)!important;opacity:0.6;z-index:50;pointer-events:none;order:0}
+  /* Score centré sur chaque panel, lisible sur le terrain */
+  .score{
+    position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+    font-size:min(38vw,45dvh)!important;
+    opacity:0.9;                /* était 0.6 — illisible */
+    z-index:50;pointer-events:none;order:0;
+    text-shadow:0 4px 28px rgba(0,0,0,0.5),0 1px 4px rgba(0,0,0,0.25);
+  }
+  /* Clair : halo blanc pour séparer le texte du terrain */
+  :root:not(.dark) .score{
+    text-shadow:0 0 28px rgba(255,255,255,0.85),0 3px 12px rgba(0,0,0,0.12);
+  }
+  .dark .score{
+    text-shadow:0 4px 32px rgba(0,0,0,0.9),0 0 60px rgba(0,0,0,0.6);
+  }
+  /* Fix bug de spécificité : .score.lg (2 classes) écrasait la taille landscape */
+  .score.lg{ font-size:min(34vw,40dvh)!important }
   .player-name{
     position:fixed;top:max(20px,env(safe-area-inset-top,20px));
     font-size:clamp(12px,2vw,18px);font-weight:800;
-    color:#fff!important;text-shadow:0 0 10px rgba(0,0,0,0.8);
-    background:rgba(0,0,0,0.55);backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,0.2);
-    padding:8px 16px;border-radius:12px;box-shadow:0 4px 15px rgba(0,0,0,0.3);z-index:250;
-    transform:none!important;
+    color:var(--player-color,#fff)!important;
+    text-shadow:0 1px 8px rgba(0,0,0,0.7);
+    background:rgba(0,0,0,0.45);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+    border:1px solid color-mix(in srgb,var(--player-color,#fff) 30%,rgba(255,255,255,0.15));
+    padding:8px 18px;border-radius:14px;
+    box-shadow:0 4px 18px rgba(0,0,0,0.35),0 0 0 1px rgba(255,255,255,0.05) inset;
+    z-index:250;transform:none!important;
   }
   #name-0{left:max(20px,env(safe-area-inset-left,20px))}
   #name-1{right:max(20px,env(safe-area-inset-right,20px))}
@@ -666,6 +703,8 @@ body:has(.open) .live-info {
 }
 @media(min-width:768px){
   .score{font-size:min(35vw,38dvh)}
+  /* Fix spécificité tablette portrait */
+  .score.lg{font-size:min(30vw,32dvh)!important}
   .iBtn{padding:12px 18px;min-width:70px}
   .iBtn .ico{font-size:22px}
   .iBtn .lbl{font-size:10px}
@@ -724,32 +763,38 @@ body:has(.open) .live-info {
   #panel-0{background:rgba(0,0,0,0.04) !important; border-right:1px solid var(--border) !important}
   .dark #panel-0{background:rgba(255,255,255,0.02) !important}
 
-  /* Scores massifs et fixes */
+  /* Scores massifs plein écran */
   .score{
     position:relative !important; top:auto !important; left:auto !important; transform:none !important;
-    font-size:min(40vw, 85dvh) !important; font-weight:900 !important;
-    opacity:1 !important; pointer-events:none; 
+    font-size:min(40vw,85dvh) !important; font-weight:900 !important;
+    opacity:1 !important; pointer-events:none;
     line-height:0.85 !important; margin:0 !important; text-align:center;
     z-index:10;
+    text-shadow:0 3px 16px rgba(0,0,0,0.15) !important;
   }
-  
-  /* Noms fixes au-dessus des scores */
+  .dark .score{text-shadow:0 3px 20px rgba(0,0,0,0.7) !important;}
+  /* Fix spécificité : sans override, .score.lg base (24vw) écrase la taille ici */
+  .score.lg{ font-size:min(37vw,78dvh) !important }
+
+  /* Noms : couleur joueur, lisible jour et nuit */
   .player-name{
-    position:absolute !important; top:15px !important; left:50% !important; transform:translateX(-50%)!important;
-    font-size:clamp(14px, 5vmin, 20px) !important; font-weight:900;
-    color:var(--text)!important; opacity:0.7;
-    text-shadow:none; background:transparent; padding:0; border:none; box-shadow:none;
-    z-index:20;
+    position:absolute !important; top:10px !important; left:50% !important; transform:translateX(-50%)!important;
+    font-size:clamp(12px,4vmin,18px) !important; font-weight:800;
+    color:var(--player-color,var(--text)) !important; opacity:1;
+    text-shadow:0 1px 6px rgba(0,0,0,0.4) !important;
+    background:none; padding:0; border:none; box-shadow:none;
+    letter-spacing:.04em; z-index:20;
   }
-  
-  /* Service Indicateur centré */
+
+  /* Serve indicator : couleur joueur, visible */
   .serve-indicator{
-    position:absolute !important; top:12px !important; left:50% !important; transform:translateX(-50%) !important;
-    font-size:10px !important; font-weight:900 !important;
-    background:var(--accent) !important; color:#fff !important;
-    padding:4px 12px !important; border-radius:30px !important; z-index:100;
-    box-shadow:0 4px 12px rgba(10, 66, 97, 0.3) !important;
-    white-space:nowrap; opacity:0.95;
+    position:absolute !important; bottom:10px !important; top:auto !important;
+    left:50% !important; transform:translateX(-50%) !important;
+    font-size:9px !important; font-weight:800 !important;
+    background:var(--player-color,var(--accent)) !important; color:#fff !important;
+    padding:3px 10px !important; border-radius:20px !important; z-index:100;
+    box-shadow:0 2px 8px color-mix(in srgb,var(--player-color,#000) 40%,transparent) !important;
+    white-space:nowrap; opacity:1;
   }
 
   /* Indicateurs secondaires (G/D bas) */
@@ -903,8 +948,7 @@ body:has(.open) .live-info {
 .timeout-dots{display:flex;gap:3px;justify-content:center;min-height:8px}
 .timeout-dot{width:6px;height:6px;border-radius:50%;background:var(--accent);transition:background .2s}
 .timeout-dot.used{background:var(--border)}
-/* ── Auto-scale score for 2-digit numbers ── */
-.score.lg{font-size:min(32vw,38dvh)!important}
+/* ── Auto-scale score for 2-digit numbers — handled above ── */
 /* ── Set summary flash ── */
 .set-summary{
   display:none;position:fixed;inset:0;z-index:490;
