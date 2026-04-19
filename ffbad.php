@@ -1,195 +1,352 @@
 <?php
 /**
- * ffbad.php — Proxy FFBaD pour Badine
- * Compatible PHP 7.2+
+ * ffbad.php — Scraping public ffbadminton.fr (sans identifiants)
+ * Compatible PHP 7.2+ · Répond au même format JSON qu'avant
  *
- * CONFIGURATION : renseignez vos identifiants API FFBaD ci-dessous.
- * Pour obtenir des accès : contacter votre ligue régionale ou api@ffbad.org
- *
- * Test : ouvrir https://badine.toisier.fr/ffbad.php?action=test
+ * ?action=test              vérifier la connectivité
+ * ?action=search&q=NOM      recherche par nom → résultats autocomplete
+ * ?action=info&licence=XXX  détail + classement d'un joueur
  */
 
 header('Content-Type: application/json; charset=utf-8');
 header('Access-Control-Allow-Origin: *');
-error_reporting(0); // ne pas fuiter les erreurs PHP en JSON
+error_reporting(0);
 
-// ── IDENTIFIANTS API ─────────────────────────────────────────────
-$FFBAD_LOGIN    = '07346745';   // ← votre login API FFBaD
-$FFBAD_PASSWORD = 'zuxnic-pIfmyp-6nanci';   // ← votre mot de passe API FFBaD
-$FFBAD_WS_URL   = 'https://api.ffbad.org/FFBAD-WS.php';
+// ── Configuration ────────────────────────────────────────────────
+// URL de recherche publique FFBaD (sans login)
+// Si l'URL change un jour, modifier ici seulement.
+define('FFBAD_SEARCH',  'https://www.ffbadminton.fr/joueurs/');
+define('FFBAD_RANKING', 'https://www.ffbadminton.fr/classement/');
+define('FFBAD_ORIGIN',  'https://www.ffbadminton.fr');
+define('FFBAD_UA',      'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1');
+define('FFBAD_TIMEOUT', 12);
+define('FFBAD_COOKIE',  sys_get_temp_dir() . '/ffbad_sess.txt');
 
-// ── APPEL API ────────────────────────────────────────────────────
-function ffbad_call($function, $params, $login, $password, $url) {
-    if (!$login || !$password) {
-        return array('_error' => 'Identifiants manquants — configurez ffbad.php');
+// ── HTTP ─────────────────────────────────────────────────────────
+/**
+ * Fetch une URL (GET) avec les bons headers navigateur.
+ * Retourne ['html' => '...', 'code' => 200] ou ['error' => '...'].
+ */
+function ffbad_get($url, array $params = []) {
+    if (!function_exists('curl_init')) {
+        return ['error' => 'cURL non disponible sur ce serveur'];
+    }
+    if ($params) {
+        $url .= (strpos($url, '?') === false ? '?' : '&') . http_build_query($params, '', '&', PHP_QUERY_RFC3986);
     }
 
-    $auth    = json_encode(array('Login' => $login, 'Password' => $password));
-    $body    = json_encode(array_merge(array('Function' => $function), $params));
-    $payload = json_encode(array('Auth' => $auth, 'Params' => $body));
+    $ch = curl_init($url);
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_FOLLOWLOCATION => true,
+        CURLOPT_MAXREDIRS      => 5,
+        CURLOPT_TIMEOUT        => FFBAD_TIMEOUT,
+        CURLOPT_ENCODING       => '',          // supporte gzip/deflate
+        CURLOPT_USERAGENT      => FFBAD_UA,
+        CURLOPT_HTTPHEADER     => [
+            'Accept: text/html,application/xhtml+xml,*/*;q=0.8',
+            'Accept-Language: fr-FR,fr;q=0.9,en;q=0.7',
+            'Referer: ' . FFBAD_ORIGIN . '/',
+            'Cache-Control: no-cache',
+        ],
+        CURLOPT_SSL_VERIFYPEER => false,
+        CURLOPT_SSL_VERIFYHOST => 0,
+        CURLOPT_COOKIEJAR      => FFBAD_COOKIE,
+        CURLOPT_COOKIEFILE     => FFBAD_COOKIE,
+    ]);
 
-    $opts = array(
-        'http' => array(
-            'method'        => 'POST',
-            'header'        => "Content-Type: application/json\r\nAccept: application/json\r\n",
-            'content'       => $payload,
-            'timeout'       => 10,
-            'ignore_errors' => true,
-        )
-    );
+    $body = curl_exec($ch);
+    $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $err  = curl_error($ch);
+    curl_close($ch);
 
-    $ctx = stream_context_create($opts);
-    $raw = @file_get_contents($url, false, $ctx);
+    if ($body === false || $body === '') {
+        return ['error' => $err ?: 'Réponse vide de ffbadminton.fr'];
+    }
+    if ($code >= 400) {
+        return ['error' => "HTTP $code — ffbadminton.fr inaccessible"];
+    }
+    return ['html' => (string) $body, 'code' => $code];
+}
 
-    if ($raw === false) {
-        return array('_error' => 'Impossible de joindre api.ffbad.org — vérifiez que OVH autorise les requêtes sortantes');
+// ── Parsing HTML ─────────────────────────────────────────────────
+/**
+ * Extrait les lignes <tr> d'un tableau HTML en tableau de tableaux de strings.
+ */
+function html_table_rows($html) {
+    $dom = new DOMDocument('1.0', 'UTF-8');
+    libxml_use_internal_errors(true);
+    $dom->loadHTML('<?xml encoding="UTF-8">' . $html);
+    libxml_clear_errors();
+    $xp   = new DOMXPath($dom);
+    $rows = $xp->query('//table//tr');
+    $out  = [];
+    foreach ($rows as $row) {
+        $cells = $xp->query('td|th', $row);
+        $vals  = [];
+        foreach ($cells as $c) {
+            $vals[] = trim(preg_replace('/\s+/', ' ', $c->textContent));
+        }
+        if (count($vals) >= 2) $out[] = $vals;
+    }
+    return $out;
+}
+
+/**
+ * Cherche un numéro de licence FFBaD (7–8 chiffres) dans un tableau de valeurs.
+ */
+function extract_licence(array $vals) {
+    foreach ($vals as $v) {
+        if (preg_match('/^\d{7,8}$/', trim($v))) return trim($v);
+    }
+    return '';
+}
+
+/**
+ * Cherche un niveau de classement FFBaD (P, D8..D1, N3..N1, R6..R1)
+ */
+function extract_niveau($val) {
+    $v = strtoupper(trim($val));
+    if (preg_match('/^(P|D[1-9]|N[1-3]|R[1-6]|[1-9]\d*)$/', $v)) return $v;
+    return '';
+}
+
+/**
+ * Interprète une ligne du tableau joueurs et renvoie un tableau normalisé.
+ * Essaie plusieurs ordres de colonnes connus sur ffbadminton.fr.
+ */
+function interpret_player_row(array $vals) {
+    $licence = extract_licence($vals);
+    if (!$licence) return null;
+
+    $idx = array_search($licence, array_map('trim', $vals));
+
+    // Format A — Licence | Nom | Prénom | Club | Département | Catégorie | Classement
+    if ($idx === 0) {
+        return [
+            'licence'    => $licence,
+            'nom'        => $vals[1] ?? '',
+            'prenom'     => $vals[2] ?? '',
+            'club'       => $vals[3] ?? '',
+            'categorie'  => $vals[5] ?? '',
+            'classement' => extract_niveau($vals[6] ?? ($vals[5] ?? '')),
+        ];
     }
 
-    // Vérifier le code HTTP
-    if (isset($http_response_header)) {
-        foreach ($http_response_header as $h) {
-            if (preg_match('/HTTP\/\d\.?\d? (\d+)/', $h, $m)) {
-                $code = (int)$m[1];
-                if ($code === 401 || $code === 403) {
-                    return array('_error' => 'Identifiants invalides (HTTP ' . $code . ')');
-                }
-                break;
-            }
+    // Format B — Nom | Prénom | Licence | Club | Catégorie | Classement
+    if ($idx === 2) {
+        return [
+            'licence'    => $licence,
+            'nom'        => $vals[0] ?? '',
+            'prenom'     => $vals[1] ?? '',
+            'club'       => $vals[3] ?? '',
+            'categorie'  => $vals[4] ?? '',
+            'classement' => extract_niveau($vals[5] ?? ''),
+        ];
+    }
+
+    // Format générique — licence trouvée ailleurs
+    $rest = array_values(array_filter($vals, fn($v) => trim($v) !== $licence));
+    return [
+        'licence'    => $licence,
+        'nom'        => $rest[0] ?? '',
+        'prenom'     => $rest[1] ?? '',
+        'club'       => $rest[2] ?? '',
+        'categorie'  => '',
+        'classement' => '',
+    ];
+}
+
+/**
+ * Parse les joueurs depuis le HTML d'une page de résultats.
+ */
+function parse_players_html($html) {
+    $rows    = html_table_rows($html);
+    $players = [];
+    foreach ($rows as $row) {
+        $p = interpret_player_row($row);
+        if ($p && !empty($p['nom'])) {
+            $players[] = [
+                'licence' => $p['licence'],
+                'nom'     => $p['nom'],
+                'prenom'  => $p['prenom'],
+                'club'    => $p['club'],
+                'sexe'    => '',
+            ];
         }
     }
-
-    $decoded = json_decode($raw, true);
-    if (!is_array($decoded)) {
-        return array('_error' => 'Réponse invalide', 'raw' => substr($raw, 0, 300));
+    // Dédupliquer par licence
+    $seen = [];
+    $out  = [];
+    foreach ($players as $p) {
+        if (!isset($seen[$p['licence']])) {
+            $seen[$p['licence']] = true;
+            $out[] = $p;
+        }
     }
-    return $decoded;
+    return $out;
 }
 
-// Normalise en tableau de lignes
-function to_list($val) {
-    if (empty($val)) return array();
-    if (isset($val[0]) && is_array($val[0])) return $val; // déjà un tableau
-    if (isset($val['Licence'])) return array($val);        // objet unique
-    if (is_array($val)) return array_values($val);
-    return array();
+/**
+ * Parse les classements d'un joueur depuis le HTML de sa page détail.
+ * Cherche une table contenant discipline + points/niveau.
+ */
+function parse_rankings_html($html) {
+    $rows     = html_table_rows($html);
+    $rankings = [];
+    $disc_map = ['SH' => 'SH', 'SD' => 'SD', 'DH' => 'DH', 'DD' => 'DD', 'DX' => 'DX',
+                 'SIMPLE H' => 'SH', 'SIMPLE D' => 'SD',
+                 'DOUBLE H' => 'DH', 'DOUBLE D' => 'DD', 'DOUBLE X' => 'DX', 'MIXTE' => 'DX'];
+
+    foreach ($rows as $row) {
+        $discipline = '';
+        $niveau     = '';
+        $points     = 0;
+
+        foreach ($row as $cell) {
+            $up = strtoupper(trim($cell));
+            if (isset($disc_map[$up])) { $discipline = $disc_map[$up]; continue; }
+            if ($n = extract_niveau($cell)) { $niveau = $n; continue; }
+            if (is_numeric($cell) && (int)$cell > 0) { $points = (int)$cell; }
+        }
+        if ($discipline && ($niveau || $points)) {
+            $rankings[] = ['discipline' => $discipline, 'sexe' => '', 'points' => $points, 'rang' => 0, 'niveau' => $niveau];
+        }
+    }
+    return $rankings;
 }
 
-// ── ROUTING ──────────────────────────────────────────────────────
+/**
+ * Essaie d'extraire un lien vers la page détail d'un joueur donné.
+ */
+function find_player_detail_url($html, $base, $licence) {
+    preg_match_all('/<a[^>]+href=["\']([^"\']*)["\'][^>]*>/i', $html, $m);
+    foreach ($m[1] as $href) {
+        if (strpos($href, $licence) !== false || preg_match('/joueur|licence|fiche|profil/i', $href)) {
+            if (strpos($href, 'http') === 0) return $href;
+            return rtrim($base, '/') . '/' . ltrim($href, '/');
+        }
+    }
+    return '';
+}
+
+// ── Routing ──────────────────────────────────────────────────────
 $action = isset($_GET['action']) ? $_GET['action'] : 'test';
 
 // ── TEST ─────────────────────────────────────────────────────────
 if ($action === 'test') {
-    if (!$FFBAD_LOGIN) {
-        echo json_encode(array(
-            'ok'    => false,
-            'error' => 'Identifiants non configurés. Ouvrez ffbad.php et renseignez $FFBAD_LOGIN et $FFBAD_PASSWORD'
-        ));
-        exit;
-    }
-    $r = ffbad_call('ws_test', array(), $FFBAD_LOGIN, $FFBAD_PASSWORD, $FFBAD_WS_URL);
-    if (isset($r['_error'])) {
-        echo json_encode(array('ok' => false, 'error' => $r['_error']));
+    $r = ffbad_get(FFBAD_SEARCH);
+    if (isset($r['error'])) {
+        echo json_encode(['ok' => false, 'error' => $r['error']]);
     } else {
-        echo json_encode(array('ok' => true, 'message' => 'Connexion FFBaD OK', 'response' => $r));
+        $ok = strlen($r['html']) > 200;
+        echo json_encode(['ok' => $ok, 'http' => $r['code'], 'bytes' => strlen($r['html']),
+                          'message' => $ok ? 'ffbadminton.fr accessible' : 'Réponse inattendue']);
     }
     exit;
 }
 
 // ── SEARCH ───────────────────────────────────────────────────────
 if ($action === 'search') {
-    $q = isset($_GET['q']) ? trim($_GET['q']) : '';
+    $q = trim(isset($_GET['q']) ? $_GET['q'] : '');
     if (strlen($q) < 2) {
-        echo json_encode(array('results' => array()));
+        echo json_encode(['results' => []]);
         exit;
     }
 
-    $res = ffbad_call('ws_getlicenceinfobystartnom',
-        array('Nom' => strtoupper($q), 'NotLastSeasonOnly' => '0'),
-        $FFBAD_LOGIN, $FFBAD_PASSWORD, $FFBAD_WS_URL
-    );
+    // Séparer "Nom Prénom" → nom = première partie, prenom = reste
+    $parts  = preg_split('/\s+/', $q, 2);
+    $nom    = strtoupper($parts[0]);
+    $prenom = count($parts) > 1 ? $parts[1] : '';
 
-    if (isset($res['_error'])) {
-        echo json_encode(array('error' => $res['_error'], 'results' => array()));
+    // Essai 1 — recherche par nom
+    $r = ffbad_get(FFBAD_SEARCH, [
+        'nom'    => $nom,
+        'prenom' => $prenom,
+        'club'   => '',
+        'submit' => '1',
+    ]);
+
+    if (isset($r['error'])) {
+        // Essai 2 — noms de paramètres alternatifs
+        $r = ffbad_get(FFBAD_SEARCH, [
+            'search_nom'    => $nom,
+            'search_prenom' => $prenom,
+            'q'             => $q,
+        ]);
+    }
+
+    if (isset($r['error'])) {
+        echo json_encode(['error' => $r['error'], 'results' => []]);
         exit;
     }
 
-    // L'API peut retourner différentes clés selon la version
-    $raw = isset($res['licenceinfo'])
-        ? $res['licenceinfo']
-        : (isset($res['Licence']) ? $res['Licence'] : array());
+    $players = parse_players_html($r['html']);
 
-    $list    = to_list($raw);
-    $players = array();
-
-    foreach (array_slice($list, 0, 12) as $p) {
-        if (!isset($p['Licence'])) continue;
-        $players[] = array(
-            'licence' => (string)$p['Licence'],
-            'nom'     => isset($p['Nom'])     ? (string)$p['Nom']     : '',
-            'prenom'  => isset($p['Prenom'])  ? (string)$p['Prenom']  : '',
-            'club'    => isset($p['NomClub']) ? (string)$p['NomClub'] : (isset($p['Club']) ? (string)$p['Club'] : ''),
-            'sexe'    => isset($p['Sexe'])    ? (string)$p['Sexe']    : '',
-        );
-    }
-
-    echo json_encode(array('results' => $players, 'count' => count($players)));
+    // Si le site a retourné 0 résultats et que le HTML semble être
+    // une page avec un formulaire (pas de tableau), on retourne vide proprement.
+    echo json_encode(['results' => array_values(array_slice($players, 0, 12)), 'count' => count($players)]);
     exit;
 }
 
 // ── INFO ─────────────────────────────────────────────────────────
 if ($action === 'info') {
-    $licence = isset($_GET['licence']) ? trim($_GET['licence']) : '';
-    if (!$licence) {
-        echo json_encode(array('error' => 'Licence manquante'));
+    $licence = trim(isset($_GET['licence']) ? $_GET['licence'] : '');
+    if (!$licence || !preg_match('/^\d{7,8}$/', $licence)) {
+        echo json_encode(['error' => 'Licence invalide']);
         exit;
     }
 
-    $info = ffbad_call('ws_getlicenceinfobylicence',
-        array('Licence' => $licence, 'NotLastSeasonOnly' => '0'),
-        $FFBAD_LOGIN, $FFBAD_PASSWORD, $FFBAD_WS_URL
-    );
-    if (isset($info['_error'])) {
-        echo json_encode(array('error' => $info['_error']));
-        exit;
+    // Recherche le joueur par sa licence pour avoir ses infos de base
+    $r = ffbad_get(FFBAD_SEARCH, ['licence' => $licence, 'submit' => '1']);
+    if (isset($r['error'])) {
+        $r = ffbad_get(FFBAD_SEARCH, ['search_licence' => $licence]);
     }
 
-    $rank = ffbad_call('ws_getrankingallbyarrayoflicence',
-        array('ArrayOfLicence' => $licence),
-        $FFBAD_LOGIN, $FFBAD_PASSWORD, $FFBAD_WS_URL
-    );
+    $nom    = '';
+    $prenom = '';
+    $club   = '';
+    $sexe   = '';
 
-    $pRaw   = isset($info['licenceinfo']) ? $info['licenceinfo'] : (isset($info['Licence']) ? $info['Licence'] : array());
-    $pList  = to_list($pRaw);
-    $player = isset($pList[0]) ? $pList[0] : array();
-
-    $rRaw     = isset($rank['ranking']) ? $rank['ranking'] : (isset($rank['Ranking']) ? $rank['Ranking'] : array());
-    $rList    = to_list($rRaw);
-    $rankings = array();
-
-    foreach ($rList as $r) {
-        $pts = isset($r['Cote']) ? (int)$r['Cote'] : (isset($r['Points']) ? (int)$r['Points'] : 0);
-        if (!$pts) continue;
-        $rankings[] = array(
-            'discipline' => isset($r['Discipline']) ? (string)$r['Discipline'] : '',
-            'sexe'       => isset($r['Sexe'])       ? (string)$r['Sexe']       : '',
-            'points'     => $pts,
-            'rang'       => isset($r['Rang'])        ? (int)$r['Rang']          : 0,
-            'niveau'     => isset($r['Niveau'])      ? (string)$r['Niveau']     : '',
-        );
+    if (!isset($r['error'])) {
+        $players = parse_players_html($r['html']);
+        foreach ($players as $p) {
+            if ($p['licence'] === $licence) {
+                $nom    = $p['nom'];
+                $prenom = $p['prenom'];
+                $club   = $p['club'];
+                break;
+            }
+        }
+        // Chercher un lien vers la fiche détaillée (classements)
+        $detail_url = find_player_detail_url($r['html'], FFBAD_ORIGIN, $licence);
     }
 
-    usort($rankings, function($a, $b) { return $b['points'] - $a['points']; });
+    $rankings = [];
 
-    echo json_encode(array(
+    // Page de classement par licence
+    $rk = ffbad_get(FFBAD_RANKING, ['licence' => $licence, 'submit' => '1']);
+    if (!isset($rk['error'])) {
+        $rankings = parse_rankings_html($rk['html']);
+    }
+
+    // Si on a une page détail, la tenter aussi
+    if (empty($rankings) && !empty($detail_url)) {
+        $det = ffbad_get($detail_url);
+        if (!isset($det['error'])) {
+            $rankings = parse_rankings_html($det['html']);
+        }
+    }
+
+    echo json_encode([
         'licence'  => $licence,
-        'nom'      => isset($player['Nom'])    ? (string)$player['Nom']    : '',
-        'prenom'   => isset($player['Prenom']) ? (string)$player['Prenom'] : '',
-        'club'     => isset($player['NomClub']) ? (string)$player['NomClub'] : (isset($player['Club']) ? (string)$player['Club'] : ''),
-        'sexe'     => isset($player['Sexe'])   ? (string)$player['Sexe']   : '',
+        'nom'      => $nom,
+        'prenom'   => $prenom,
+        'club'     => $club,
+        'sexe'     => $sexe,
         'rankings' => $rankings,
-    ));
+    ]);
     exit;
 }
 
-// Ne devrait pas arriver
-echo json_encode(array('error' => 'Action inconnue. Essayez: ?action=test'));
+echo json_encode(['error' => 'Action inconnue. Essayez: ?action=test']);
