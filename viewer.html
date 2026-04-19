@@ -25,17 +25,23 @@ html,body{height:100%;background:var(--bg);color:var(--text);overflow:hidden;tra
 .scoreboard{display:flex;align-items:stretch;gap:clamp(12px,4vmin,40px)}
 .player-col{display:flex;flex-direction:column;align-items:center;gap:clamp(4px,1vmin,10px);flex:1}
 .p-name{font-size:clamp(14px,2.8vmin,26px);font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted)}
-.p-score{font-family:'Bebas Neue',sans-serif;font-size:clamp(80px,22vmin,200px);line-height:.9;letter-spacing:-2px;color:var(--text)}
+.p-score{font-family:'Bebas Neue',sans-serif;font-size:clamp(80px,22vmin,200px);line-height:.9;letter-spacing:-2px;color:var(--text);transition:color .3s}
 .p-score.c0{color:var(--c0)}
 .p-score.c1{color:var(--c1)}
 .p-sets{font-size:clamp(10px,1.8vmin,15px);font-weight:600;color:var(--muted);letter-spacing:2px}
 .p-srv{font-size:clamp(9px,1.4vmin,13px);font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--c0);min-height:14px}
 .divider{width:2px;background:var(--border);border-radius:2px;align-self:stretch;margin:10px 0}
+.sets-history{display:flex;gap:clamp(6px,1.5vmin,12px);align-items:center;flex-wrap:wrap;justify-content:center;min-height:28px}
+.set-block{display:flex;flex-direction:column;align-items:center;gap:2px;background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:4px 10px}
+.set-block .sb-n{font-size:clamp(8px,1.2vmin,11px);font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.set-block .sb-s{font-family:'Bebas Neue',sans-serif;font-size:clamp(16px,3vmin,28px);letter-spacing:1px;color:var(--text);line-height:1}
+.set-block.current{border-color:var(--c0);background:color-mix(in srgb,var(--c0) 8%,var(--panel))}
 .status-row{display:flex;align-items:center;gap:8px}
-.live-dot{width:7px;height:7px;border-radius:50%;background:#FF3B30;animation:blink 1.4s ease-in-out infinite}
+.live-dot{width:7px;height:7px;border-radius:50%;background:#FF3B30;animation:blink 1.4s ease-in-out infinite;transition:background .3s}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
 .status-txt{font-size:clamp(10px,1.6vmin,14px);font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--muted)}
 .chrono{font-family:'Bebas Neue',sans-serif;font-size:clamp(20px,4vmin,36px);letter-spacing:3px;color:var(--muted)}
+.conn-badge{font-size:clamp(9px,1.3vmin,12px);font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);opacity:.6;animation:blink 1s ease-in-out infinite}
 </style>
 </head>
 <body>
@@ -59,16 +65,43 @@ html,body{height:100%;background:var(--bg);color:var(--text);overflow:hidden;tra
       <div class="p-sets" id="v-sets-1"></div>
     </div>
   </div>
+  <div class="sets-history" id="v-sets-history"></div>
   <div class="status-row">
     <div class="live-dot" id="v-dot"></div>
     <div class="chrono" id="v-chrono">0:00</div>
     <div class="status-txt" id="v-status">En direct</div>
+    <div class="conn-badge" id="v-conn" style="display:none">Reconnexion…</div>
   </div>
 </div>
 <script>
 let lastData=null, localSec=0, chronoTick=null, isRunning=false;
 
 function fmtTime(s){const h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sec=s%60;return h?h+":"+String(m).padStart(2,"0")+":"+String(sec).padStart(2,"0"):m+":"+String(sec).padStart(2,"0");}
+
+function setConnState(state){
+  const dot=document.getElementById("v-dot");
+  const conn=document.getElementById("v-conn");
+  if(state==="live"){dot.style.background="#FF3B30";dot.style.animation="";if(conn)conn.style.display="none";}
+  else if(state==="reconnecting"){dot.style.background="#FFA500";dot.style.animation="none";if(conn)conn.style.display="";}
+  else{dot.style.background="#4A6068";dot.style.animation="none";if(conn)conn.style.display="none";}
+}
+
+function renderSetsHistory(G, names){
+  const wrap=document.getElementById("v-sets-history");
+  if(!wrap)return;
+  wrap.innerHTML="";
+  G.sets.forEach(([a,b],i)=>{
+    const w=a>b?0:1;
+    const blk=document.createElement("div");blk.className="set-block";
+    blk.innerHTML=`<span class="sb-n">Set ${i+1}</span><span class="sb-s" style="color:var(--c${w})">${a}–${b}</span>`;
+    wrap.appendChild(blk);
+  });
+  if(!G.over&&G.sets.length>0){
+    const blk=document.createElement("div");blk.className="set-block current";
+    blk.innerHTML=`<span class="sb-n">En cours</span><span class="sb-s">${G.sc[0]}–${G.sc[1]}</span>`;
+    wrap.appendChild(blk);
+  }
+}
 
 function update(d){
   if(!d||!d.names) return;
@@ -77,7 +110,6 @@ function update(d){
   document.getElementById("v-name-1").textContent=names[1];
   document.getElementById("v-score-0").textContent=G.sc[0];
   document.getElementById("v-score-1").textContent=G.sc[1];
-  const fmt=([a,b])=>a+"-"+b;
   document.getElementById("v-sets-0").textContent=G.sets.map(([a])=>a).join(" · ");
   document.getElementById("v-sets-1").textContent=G.sets.map(([,b])=>b).join(" · ");
   document.getElementById("v-srv-0").textContent=G.srv===0&&!G.over?"● Service":"";
@@ -88,12 +120,13 @@ function update(d){
     : names[0]+" vs "+names[1]+" — Set "+setNum;
   localSec=matchSeconds;
   isRunning=!G.over;
+  renderSetsHistory(G, names);
   if(G.over){
     clearInterval(chronoTick);
-    document.getElementById("v-dot").style.background="#4A6068";
+    setConnState("over");
     document.getElementById("v-status").textContent="Terminé";
   } else {
-    document.getElementById("v-dot").style.background="#FF3B30";
+    setConnState("live");
     document.getElementById("v-status").textContent="En direct";
   }
   document.getElementById("v-chrono").textContent=fmtTime(localSec);
@@ -103,18 +136,35 @@ function update(d){
 clearInterval(chronoTick);
 chronoTick=setInterval(()=>{ if(isRunning){ localSec++; document.getElementById("v-chrono").textContent=fmtTime(localSec); } }, 1000);
 
-// BroadcastChannel — instant update when same browser (same origin)
+// BroadcastChannel — instant update within same browser/origin
 try{
   const bc=new BroadcastChannel("badine");
   bc.onmessage=e=>{ if(e.data){ const s=JSON.stringify(e.data); if(s!==lastData){lastData=s;update(e.data);} } };
 }catch(_){}
 
-// SSE first, fallback to polling (cross-device / different browser)
+// SSE with exponential backoff, then fall back to polling
+let sseRetries=0;
+const SSE_MAX_RETRIES=5;
+
 function startSSE(){
   const es=new EventSource("sse.php");
-  es.onmessage=e=>{ try{ const d=JSON.parse(e.data); const s=JSON.stringify(d); if(s!==lastData){lastData=s;update(d);} }catch(_){} };
-  es.onerror=()=>{ es.close(); startPolling(); };
+  es.onopen=()=>{ sseRetries=0; setConnState("live"); };
+  es.onmessage=e=>{
+    try{ const d=JSON.parse(e.data); const s=JSON.stringify(d); if(s!==lastData){lastData=s;update(d);} }catch(_){}
+  };
+  es.onerror=()=>{
+    es.close();
+    sseRetries++;
+    if(sseRetries<=SSE_MAX_RETRIES){
+      setConnState("reconnecting");
+      const delay=Math.min(1000*Math.pow(2,sseRetries-1),30000);
+      setTimeout(startSSE,delay);
+    } else {
+      startPolling();
+    }
+  };
 }
+
 function startPolling(){
   setInterval(async()=>{
     try{
