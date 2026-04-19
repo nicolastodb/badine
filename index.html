@@ -51,26 +51,26 @@ html,body{height:100%;background:var(--bg);overflow:hidden;-webkit-touch-callout
   .player-name, .name-input, .player-level {
     position:absolute!important; left:50%; transform:translateX(-50%)!important; margin:0;
   }
-  .player-name, .name-input { bottom:max(220px, 25vh); font-size:clamp(16px, 3.5vmin, 24px) !important; font-weight:800; }
-  .player-level { bottom:max(200px, 23vh); }
-  
+  .player-name, .name-input { bottom:max(178px, 21vh); font-size:clamp(16px, 3.5vmin, 24px) !important; font-weight:800; }
+  .player-level { bottom:max(148px, 18vh); }
+
   .serve-indicator{
-    position:fixed;bottom:max(235px, 28vh);left:50%;transform:translateX(-50%);
+    position:fixed;bottom:max(218px, 26vh);left:50%;transform:translateX(-50%);
     z-index:200;pointer-events:none;white-space:nowrap;
     font-size:14px;
   }
-  
+
   .set-dots, .timeout-dots{
     position:fixed;z-index:200;pointer-events:none;
     display:flex;gap:6px;align-items:center;
   }
-  
+
   /* P0 Left, P1 Right - ensured no horizontal clashing */
   #setdots-0, #tdots-0{left:8%;right:unset}
   #setdots-1, #tdots-1{right:8%;left:unset;flex-direction:row-reverse}
-  
-  .timeout-dots{bottom:max(200px, 23vh)}
-  .set-dots{bottom:max(165px, 19vh)}
+
+  .timeout-dots{bottom:max(116px, 14vh)}
+  .set-dots{bottom:max(88px, 11vh)}
   
   /* Visual: Timeouts = Gold Squares */
   .timeout-dots .timeout-dot{
@@ -827,8 +827,13 @@ body:has(.open) .live-info {
 }
 .splash-sub{
   font-size:13px;font-weight:500;color:var(--muted);letter-spacing:.06em;
-  text-transform:uppercase;margin-bottom:40px;
+  text-transform:uppercase;margin-bottom:8px;
   animation:fadeUp .5s .25s ease both;
+}
+.splash-version{
+  font-size:11px;font-weight:600;color:var(--muted);letter-spacing:.08em;
+  opacity:.45;margin-bottom:32px;
+  animation:fadeUp .5s .3s ease both;
 }
 @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
 .splash-menu{
@@ -1386,6 +1391,7 @@ body:has(.open) .live-info {
   <img src="logobadine.jpg" class="splash-logo" alt="Badine">
   <div class="splash-title">Badine</div>
   <div class="splash-sub">Arbitrage Badminton</div>
+  <div class="splash-version">v11.3</div>
   <div class="splash-menu">
     <button class="splash-btn primary" id="splash-new">
       <span class="sb-ico">＋</span>
@@ -2106,7 +2112,7 @@ function render(){
     }
     // Band
     const band=document.getElementById(`band-${side}`);
-    if(band)band.style.setProperty('--band-color',col+'BB');
+    if(band)band.style.setProperty('--band-color',col+'44');
   }
   // Buttons
   const undoBtn=document.getElementById('btn-undo');
