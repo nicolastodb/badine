@@ -3241,13 +3241,39 @@ async function ffbadSearch(p, query){
     if(d.results&&d.results.length>0){
       showFFBadResults(p, d.results, query);
     } else {
-      // Fallback to local known players
       showKnownPlayers(p, query);
+      const hint=document.getElementById(`pcard-${p}-hint`);
+      if(hint)hint.innerHTML=`<span style="opacity:.7">Non trouvé sur FFBaD · </span><span style="color:var(--accent);cursor:pointer;text-decoration:underline" onclick="showLicenceEntry(${p})">Saisir n° licence</span>`;
     }
   }catch(_){
     input.classList.remove('searching');
     showKnownPlayers(p, query);
+    const hint=document.getElementById(`pcard-${p}-hint`);
+    if(hint)hint.innerHTML=`<span style="opacity:.7">Hors ligne · </span><span style="color:var(--accent);cursor:pointer;text-decoration:underline" onclick="showLicenceEntry(${p})">Saisir n° licence</span>`;
   }
+}
+
+function showLicenceEntry(p){
+  const hint=document.getElementById(`pcard-${p}-hint`);
+  if(!hint)return;
+  hint.innerHTML=`<div style="display:flex;gap:6px;align-items:center;justify-content:center;margin:2px 0">
+    <input id="lic-entry-${p}" type="text" inputmode="numeric" maxlength="8"
+      placeholder="N° licence (8 chiffres)"
+      style="width:156px;padding:5px 8px;border-radius:8px;border:1px solid var(--border);background:var(--mid);color:var(--text);font-size:12px;text-align:center;outline:none"
+      onkeydown="if(event.key==='Enter')loadByLicence(${p})">
+    <button onclick="loadByLicence(${p})"
+      style="padding:5px 10px;border-radius:8px;background:var(--accent);color:var(--bg);font-size:12px;font-weight:700;border:none;cursor:pointer">OK</button>
+  </div>`;
+  setTimeout(()=>document.getElementById(`lic-entry-${p}`)?.focus(),50);
+}
+
+async function loadByLicence(p){
+  const inp=document.getElementById(`lic-entry-${p}`);
+  if(!inp)return;
+  const lic=inp.value.replace(/\D/g,'');
+  if(!/^\d{7,8}$/.test(lic))return;
+  const nameInput=document.getElementById(`setup-name-${p}`);
+  await ffbadLoadInfo(p, lic, nameInput?.value||'');
 }
 
 function showFFBadResults(p, results, query){
