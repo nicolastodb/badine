@@ -45,53 +45,59 @@ html,body{height:100%;background:var(--bg);overflow:hidden;-webkit-touch-callout
   pointer-events:none;overflow:hidden;
 }
 @media(orientation:portrait){
-  /* Court : espace pour le score en haut et les infos joueur en bas */
-  .perspective-wrap{padding-top:max(140px,17vh);padding-bottom:max(200px,24vh);align-items:center}
+  /* Court SVG : espace pour le score en haut, info joueur en bas */
+  .perspective-wrap{padding-top:max(110px,14dvh);padding-bottom:max(140px,18dvh);align-items:center}
 
-  /* Tous les éléments d'info joueur : position:absolute dans leur panel (50% de largeur),
-     centrés horizontalement — les deux joueurs ne se chevauchent plus */
-  .player-name, .name-input, .player-level, .serve-indicator,
-  .set-dots, .timeout-dots {
+  /* Score : absolu, centré dans son demi-panel, flotte au-dessus du terrain */
+  .score{
+    position:absolute !important;
+    top:38%; left:50%;
+    transform:translate(-50%,-50%) !important;
+    pointer-events:none; z-index:100;
+  }
+  /* Serving : conserver la translation + scale */
+  .score.serving{transform:translate(-50%,-50%) scale(1.06) !important}
+
+  /* Animation point : intégrer la translation pour ne pas sauter */
+  @keyframes scorePoint{
+    0%  {transform:translate(-50%,-50%) scale(1)}
+    20% {transform:translate(-50%,-50%) scale(1.28)}
+    50% {transform:translate(-50%,-50%) scale(.93)}
+    72% {transform:translate(-50%,-50%) scale(1.08)}
+    100%{transform:translate(-50%,-50%) scale(1)}
+  }
+
+  /* Éléments info joueur : absolus, centrés horizontalement dans leur panel */
+  .player-name,.name-input,.player-level,.serve-indicator,.set-dots,.timeout-dots{
     position:absolute !important;
     left:50%; right:unset !important;
     transform:translateX(-50%) !important;
     margin:0;
   }
 
-  /* Empilement vertical depuis le bas du panel */
-  .set-dots   { bottom:10px;  display:flex;gap:6px;align-items:center;z-index:200;pointer-events:none; }
-  .timeout-dots{ bottom:36px; display:flex;gap:6px;align-items:center;z-index:200;pointer-events:none; }
-  .player-level{ bottom:64px; }
-  .player-name, .name-input {
-    bottom:88px;
-    font-size:clamp(14px,3.5vmin,22px) !important; font-weight:800;
-    max-width:90%; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  /* Empilement depuis le bas (dvh = vrai viewport iPhone, robuste au menu Safari) */
+  .set-dots    {bottom:max(12px,1.5dvh);display:flex;gap:6px;align-items:center;z-index:200;pointer-events:none}
+  .timeout-dots{bottom:max(36px,5dvh);display:flex;gap:6px;align-items:center;z-index:200;pointer-events:none}
+  .player-level{bottom:max(60px,8.5dvh);z-index:200;font-size:clamp(9px,1.5vmin,12px)}
+  .player-name,.name-input{
+    bottom:max(80px,12dvh);
+    font-size:clamp(13px,3.8vmin,20px) !important; font-weight:800;
+    max-width:92%;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
   }
-  .serve-indicator{
-    bottom:120px;
-    z-index:200; pointer-events:none; white-space:nowrap; font-size:13px;
-  }
+  .serve-indicator{bottom:max(110px,16dvh);z-index:200;pointer-events:none;white-space:nowrap;font-size:12px}
 
-  /* Animation d'entrée du serve-indicator : conserver le translateX(-50%) */
+  /* Animation serve : conserver translateX(-50%) */
   @keyframes serveIn{
     from{transform:translateX(-50%) scale(.85)}
     to  {transform:translateX(-50%) scale(1)}
   }
 
-  /* Visual: Timeouts = Gold Squares */
-  .timeout-dots .timeout-dot{
-    width:8px;height:8px;border-radius:1px !important;
-    background:var(--border);opacity:0.3;
-  }
+  /* Sets = cercles, Timeouts = carrés dorés */
+  .set-dots .sd{width:14px;height:14px;border-radius:50%;background:var(--border)}
+  .timeout-dots .timeout-dot{width:8px;height:8px;border-radius:1px !important;background:var(--border);opacity:.3}
   .timeout-dots .timeout-dot.active{background:#FFD700;opacity:1;box-shadow:0 0 4px #FFD70088}
 
-  /* Visual: Sets = Large Circles */
-  .set-dots .sd{width:15px;height:15px;border-radius:50%;background:var(--border)}
-
   .live-info{display:none !important}
-  /* Portrait — score optimisé : 1 chiffre exploite la largeur, 2 chiffres réduit */
-  .score   { font-size:min(28vw,34dvh) }
-  .score.lg{ font-size:min(23vw,27dvh) !important }
 }
 @media(orientation:landscape){
   .perspective-wrap{align-items:center;padding-bottom:0}
@@ -336,6 +342,9 @@ html,body{height:100%;background:var(--bg);overflow:hidden;-webkit-touch-callout
   .iBtn .ico{font-size:26px}
   .iBtn .lbl{font-size:11px;letter-spacing:-0.01em;font-weight:700}
   .pill-sep{margin:0 4px;opacity:0.3;height:38px}
+  /* Tailles du score ici (après les règles de base) pour gagner la cascade */
+  .score   {font-size:min(46vw,38dvh)!important}
+  .score.lg{font-size:min(37vw,30dvh)!important}
 }
 .iBtn:active{background:var(--mid);transform:scale(0.95)}
 .iBtn:disabled{opacity:.25;pointer-events:none;transform:none}
