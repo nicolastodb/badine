@@ -45,8 +45,8 @@ html,body{height:100%;background:var(--bg);overflow:hidden;-webkit-touch-callout
   pointer-events:none;overflow:hidden;
 }
 @media(orientation:portrait){
-  /* Court SVG : espace pour le score en haut, info joueur en bas */
-  .perspective-wrap{padding-top:max(110px,14dvh);padding-bottom:max(140px,18dvh);align-items:center}
+  /* Court SVG : pas de padding — score et info joueur flottent en overlay */
+  .perspective-wrap{padding-top:0;padding-bottom:0;align-items:center}
 
   /* Score : absolu, centré dans son demi-panel, flotte au-dessus du terrain */
   .score{
@@ -345,6 +345,13 @@ html,body{height:100%;background:var(--bg);overflow:hidden;-webkit-touch-callout
   /* Tailles du score ici (après les règles de base) pour gagner la cascade */
   .score   {font-size:min(46vw,38dvh)!important}
   .score.lg{font-size:min(37vw,30dvh)!important}
+  /* Terrain vertical : plein écran — hauteur pilote le dimensionnement,
+     largeur déborde (clippée par overflow:hidden) → court aussi grand que possible */
+  .court:not(.horiz) .court-svg{
+    width:auto;max-width:none;
+    height:58dvh;
+    transform:perspective(900px) rotateX(34deg);
+  }
 }
 .iBtn:active{background:var(--mid);transform:scale(0.95)}
 .iBtn:disabled{opacity:.25;pointer-events:none;transform:none}
