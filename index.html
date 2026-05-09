@@ -45,8 +45,12 @@ html,body{height:100%;background:var(--bg);overflow:hidden;-webkit-touch-callout
   pointer-events:none;overflow:hidden;
 }
 @media(orientation:portrait){
-  /* Court SVG : pas de padding — score et info joueur flottent en overlay */
-  .perspective-wrap{padding-top:0;padding-bottom:0;align-items:center}
+  /* Terrain plein écran : fixed de haut en bas, sous header (z:20) et bottom-bar (z:20) */
+  .perspective-wrap{
+    position:fixed !important;
+    inset:0;z-index:2;
+    padding:0;align-items:center;
+  }
 
   /* Score : absolu, centré dans son demi-panel, flotte au-dessus du terrain */
   .score{
